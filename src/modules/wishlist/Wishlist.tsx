@@ -11,10 +11,16 @@ type Category = 'purchase' | 'experience' | 'goal' | 'milestone'
 type Priority = 'low' | 'medium' | 'high'
 
 const categoryConfig: Record<Category, { label: string; icon: typeof ShoppingBag; color: string }> = {
-  purchase:   { label: 'Compra',       icon: ShoppingBag, color: 'var(--color-sky)' },
-  experience: { label: 'Experiência',  icon: Compass,     color: 'var(--color-berry)' },
-  goal:       { label: 'Meta',         icon: Trophy,      color: 'var(--color-sun)' },
-  milestone:  { label: 'Marco de vida',icon: Flag,        color: 'var(--color-leaf)' },
+  purchase:   { label: 'Compra',        icon: ShoppingBag, color: 'var(--color-sky)'   },
+  experience: { label: 'Experiência',   icon: Compass,     color: 'var(--color-berry)' },
+  goal:       { label: 'Meta',          icon: Trophy,      color: 'var(--color-sun)'   },
+  milestone:  { label: 'Marco de vida', icon: Flag,        color: 'var(--color-leaf)'  },
+}
+
+const priorityConfig: Record<Priority, { label: string; color: 'leaf' | 'sun' | 'coral' }> = {
+  low:    { label: 'Baixa', color: 'leaf'  },
+  medium: { label: 'Média', color: 'sun'   },
+  high:   { label: 'Alta',  color: 'coral' },
 }
 
 function AddWishModal({ onClose }: { onClose: () => void }) {
@@ -118,11 +124,130 @@ function AddWishModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+interface WishCardProps {
+  item: WishItem
+  onToggle: () => void
+  onDelete: () => void
+}
+
+function WishCard({ item, onToggle, onDelete }: WishCardProps) {
+  const cat = categoryConfig[item.category]
+  const CatIcon = cat.icon
+  const p = priorityConfig[item.priority]
+
+  return (
+    <div
+      className={`flex flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface-elevated)] shadow-md p-3 gap-0 transition-opacity ${item.completed ? 'opacity-55' : ''}`}
+    >
+      {/* Cover image or placeholder */}
+      {item.imageUrl ? (
+        <div className="relative h-48 w-full mb-3">
+          <img
+            src={item.imageUrl}
+            alt={item.title}
+            className="w-full h-full object-cover rounded-[var(--radius-lg)]"
+          />
+          {item.completed && (
+            <div className="absolute inset-0 rounded-[var(--radius-lg)] bg-[var(--color-leaf)] bg-opacity-20 flex items-center justify-center">
+              <Check size={36} className="text-[var(--color-leaf-deep)]" strokeWidth={3} />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div
+          className="h-28 w-full mb-3 rounded-[var(--radius-lg)] flex items-center justify-center"
+          style={{ background: `${cat.color}18` }}
+        >
+          <CatIcon size={40} style={{ color: cat.color }} />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="flex flex-col gap-2 px-1 pb-1 flex-1">
+        {/* Category + Priority */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold"
+            style={{ background: 'var(--color-surface-sunken)', color: 'var(--color-ink-muted)' }}
+          >
+            <CatIcon size={11} />
+            {cat.label}
+          </span>
+          <span className="text-[var(--color-ink-faint)] text-xs">•</span>
+          <Badge color={p.color}>{p.label}</Badge>
+        </div>
+
+        {/* Title */}
+        <h3
+          className={`text-xl font-bold leading-tight ${item.completed ? 'line-through text-[var(--color-ink-subtle)]' : 'text-[var(--color-ink)]'}`}
+        >
+          {item.title}
+        </h3>
+
+        {/* Description */}
+        {item.description && (
+          <p
+            className="text-sm text-[var(--color-ink-muted)] overflow-hidden"
+            style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as const }}
+          >
+            {item.description}
+          </p>
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="flex items-end justify-between px-1 pt-3 mt-auto">
+        <div className="flex flex-col gap-0.5">
+          {item.price !== undefined && (
+            <>
+              <p className="text-xs text-[var(--color-ink-subtle)]">Valor estimado</p>
+              <p className="text-base font-bold text-[var(--color-ink)]">
+                R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+            </>
+          )}
+          {item.targetDate && (
+            <>
+              <p className="text-xs text-[var(--color-ink-subtle)]">{item.price !== undefined ? '' : 'Meta para'}
+              </p>
+              <p className="text-sm font-semibold text-[var(--color-ink-muted)]">
+                📅 {new Date(item.targetDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+              </p>
+            </>
+          )}
+          {!item.price && !item.targetDate && (
+            <span />
+          )}
+        </div>
+
+        <div className="flex gap-1 shrink-0">
+          <button
+            onClick={onToggle}
+            title={item.completed ? 'Marcar como pendente' : 'Marcar como realizado'}
+            className={`p-2 rounded-[var(--radius-md)] transition-colors ${
+              item.completed
+                ? 'bg-[var(--color-leaf-soft)] text-[var(--color-leaf-deep)]'
+                : 'hover:bg-[var(--color-leaf-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-leaf)]'
+            }`}
+          >
+            <Check size={15} />
+          </button>
+          <button
+            onClick={onDelete}
+            className="p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-coral-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-coral)] transition-colors"
+          >
+            <Trash2 size={15} />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Wishlist() {
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState<Category | 'all'>('all')
 
-  // Fetch all and filter in JS to avoid Dexie boolean index issues
   const items = useLiveQuery(() =>
     db.wishItems.toArray().then(arr => arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt))), [])
 
@@ -141,11 +266,11 @@ export function Wishlist() {
   const totalCount = allItems.length
 
   const filterOptions: { value: Category | 'all'; label: string }[] = [
-    { value: 'all', label: 'Todos' },
-    { value: 'purchase', label: 'Compras' },
+    { value: 'all',        label: 'Todos'        },
+    { value: 'purchase',   label: 'Compras'      },
     { value: 'experience', label: 'Experiências' },
-    { value: 'goal', label: 'Metas' },
-    { value: 'milestone', label: 'Marcos' },
+    { value: 'goal',       label: 'Metas'        },
+    { value: 'milestone',  label: 'Marcos'       },
   ]
 
   return (
@@ -196,78 +321,25 @@ export function Wishlist() {
         ))}
       </div>
 
-      {/* Items */}
-      <div className="flex flex-col gap-2">
-        {filtered.length === 0 && (
-          <Card className="text-center py-10">
-            <Star size={32} className="mx-auto text-[var(--color-ink-faint)] mb-2" />
-            <p className="text-[var(--color-ink-subtle)]">Nenhum desejo aqui ainda.</p>
-            <p className="text-sm text-[var(--color-ink-faint)] mt-1">O que você quer conquistar?</p>
-          </Card>
-        )}
-        {filtered.map((item: WishItem) => {
-          const cat = categoryConfig[item.category]
-          const CatIcon = cat.icon
-          return (
-            <Card key={item.id} className={`flex items-start gap-3 transition-opacity ${item.completed ? 'opacity-60' : ''}`}>
-              {item.imageUrl ? (
-                <div className="w-20 h-20 rounded-[var(--radius-md)] overflow-hidden shrink-0 border border-[var(--color-outline)]">
-                  <img src={item.imageUrl} alt={item.title} className="w-full h-full object-cover" />
-                </div>
-              ) : (
-                <div
-                  className="w-10 h-10 rounded-[var(--radius-md)] flex items-center justify-center shrink-0"
-                  style={{ background: `${cat.color}18` }}
-                >
-                  <CatIcon size={18} style={{ color: cat.color }} />
-                </div>
-              )}
-
-              <div className="flex-1 min-w-0">
-                <p className={`font-semibold text-sm ${item.completed ? 'line-through text-[var(--color-ink-subtle)]' : 'text-[var(--color-ink)]'}`}>
-                  {item.title}
-                </p>
-                {item.description && (
-                  <p className="text-xs text-[var(--color-ink-subtle)] mt-0.5">{item.description}</p>
-                )}
-                <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-                  <Badge color="neutral">{cat.label}</Badge>
-                  {item.price !== undefined && (
-                    <span className="text-xs font-medium text-[var(--color-ink-muted)]">
-                      R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                    </span>
-                  )}
-                  {item.targetDate && (
-                    <span className="text-xs text-[var(--color-ink-subtle)]">
-                      📅 {new Date(item.targetDate + 'T00:00:00').toLocaleDateString('pt-BR')}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-1 shrink-0">
-                <button
-                  onClick={() => toggleComplete(item)}
-                  title={item.completed ? 'Marcar como pendente' : 'Marcar como realizado'}
-                  className={`p-1.5 rounded-[var(--radius-sm)] transition-colors ${
-                    item.completed
-                      ? 'bg-[var(--color-leaf-soft)] text-[var(--color-leaf-deep)]'
-                      : 'hover:bg-[var(--color-leaf-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-leaf)]'
-                  }`}
-                >
-                  <Check size={14} />
-                </button>
-                <button
-                  onClick={() => item.id && deleteItem(item.id)}
-                  className="p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--color-coral-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-coral)] transition-colors"
-                >
-                  <Trash2 size={14} />
-                </button>
-              </div>
-            </Card>
-          )
-        })}
-      </div>
+      {/* Items grid */}
+      {filtered.length === 0 ? (
+        <Card className="text-center py-10">
+          <Star size={32} className="mx-auto text-[var(--color-ink-faint)] mb-2" />
+          <p className="text-[var(--color-ink-subtle)]">Nenhum desejo aqui ainda.</p>
+          <p className="text-sm text-[var(--color-ink-faint)] mt-1">O que você quer conquistar?</p>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filtered.map((item: WishItem) => (
+            <WishCard
+              key={item.id}
+              item={item}
+              onToggle={() => toggleComplete(item)}
+              onDelete={() => item.id && deleteItem(item.id)}
+            />
+          ))}
+        </div>
+      )}
 
       {showModal && <AddWishModal onClose={() => setShowModal(false)} />}
     </div>
