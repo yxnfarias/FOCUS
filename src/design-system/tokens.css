@@ -72,6 +72,32 @@
   --color-outline-strong: #94A3B8;
 }
 
+[data-theme="dark"] {
+  --color-sky: #60A5FA;
+  --color-sky-bright: #93C5FD;
+  --color-sky-deep: #93C5FD;
+  --color-sky-soft: #1E3A5F;
+  --color-sun: #FBBF24;
+  --color-sun-bright: #FCD34D;
+  --color-sun-deep: #FCD34D;
+  --color-leaf: #4ADE80;
+  --color-leaf-soft: #14532D;
+  --color-leaf-deep: #86EFAC;
+  --color-coral: #F87171;
+  --color-coral-soft: #450A0A;
+  --color-berry: #C084FC;
+  --color-background: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-elevated: #263349;
+  --color-surface-sunken: #0B1120;
+  --color-ink: #F1F5F9;
+  --color-ink-muted: #94A3B8;
+  --color-ink-subtle: #64748B;
+  --color-ink-faint: #334155;
+  --color-outline: #2D3F55;
+  --color-outline-strong: #475569;
+}
+
 * {
   font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
 }
