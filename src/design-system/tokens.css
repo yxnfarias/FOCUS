@@ -9,6 +9,7 @@
   --color-sun: #FBBF24;
   --color-sun-bright: #FCD34D;
   --color-sun-deep: #D97706;
+  --color-sun-soft: #FEF9C3;
 
   /* Progress / Success */
   --color-leaf: #22C55E;
@@ -21,6 +22,8 @@
 
   /* Accent */
   --color-berry: #A855F7;
+  --color-berry-soft: #F3E8FF;
+  --color-berry-deep: #6D28D9;
 
   /* Surfaces */
   --color-background: #FFFFFF;
@@ -54,12 +57,15 @@
   --color-sun: #FBBF24;
   --color-sun-bright: #FCD34D;
   --color-sun-deep: #D97706;
+  --color-sun-soft: #FEF9C3;
   --color-leaf: #22C55E;
   --color-leaf-soft: #DCFCE7;
   --color-leaf-deep: #16A34A;
   --color-coral: #F87171;
   --color-coral-soft: #FEE2E2;
   --color-berry: #A855F7;
+  --color-berry-soft: #F3E8FF;
+  --color-berry-deep: #6D28D9;
   --color-background: #FFFFFF;
   --color-surface: #F8FAFC;
   --color-surface-elevated: #FFFFFF;
@@ -70,32 +76,70 @@
   --color-ink-faint: #CBD5E1;
   --color-outline: #E2E8F0;
   --color-outline-strong: #94A3B8;
+
+  /* Streak banner */
+  --color-streak-bg: #FFFBEB;
+  --color-streak-border: #FDE68A;
+  --color-streak-title: #92400E;
+  --color-streak-text: #D97706;
+
+  /* Kanban column hovers */
+  --color-kanban-todo-hover: #E2E8F0;
+  --color-kanban-sky-hover: #BFDBFE;
+  --color-kanban-leaf-hover: #BBF7D0;
+
+  /* Overlay for card badges / buttons on colored surfaces */
+  --color-card-badge: rgba(255, 255, 255, 0.65);
+  --color-card-btn-hover: rgba(255, 255, 255, 0.65);
 }
 
 [data-theme="dark"] {
+  /* Brand — slightly brighter for legibility on dark */
   --color-sky: #60A5FA;
   --color-sky-bright: #93C5FD;
   --color-sky-deep: #93C5FD;
-  --color-sky-soft: #1E3A5F;
+  --color-sky-soft: #1A3A60;
   --color-sun: #FBBF24;
   --color-sun-bright: #FCD34D;
   --color-sun-deep: #FCD34D;
+  --color-sun-soft: #431A00;
   --color-leaf: #4ADE80;
   --color-leaf-soft: #14532D;
   --color-leaf-deep: #86EFAC;
   --color-coral: #F87171;
-  --color-coral-soft: #450A0A;
+  --color-coral-soft: #4C0519;
   --color-berry: #C084FC;
-  --color-background: #0F172A;
-  --color-surface: #1E293B;
-  --color-surface-elevated: #263349;
-  --color-surface-sunken: #0B1120;
+  --color-berry-soft: #2E1065;
+  --color-berry-deep: #D8B4FE;
+
+  /* Surfaces — more distinct levels for visible elevation */
+  --color-background: #0D1520;
+  --color-surface: #141E2E;
+  --color-surface-elevated: #1E2D42;
+  --color-surface-sunken: #090F1A;
+
+  /* Ink */
   --color-ink: #F1F5F9;
   --color-ink-muted: #94A3B8;
   --color-ink-subtle: #64748B;
-  --color-ink-faint: #334155;
-  --color-outline: #2D3F55;
-  --color-outline-strong: #475569;
+  --color-ink-faint: #3D5068;
+  --color-outline: #263345;
+  --color-outline-strong: #3D5068;
+
+  /* Streak banner */
+  --color-streak-bg: #1C1000;
+  --color-streak-border: #78350F;
+  --color-streak-title: #FCD34D;
+  --color-streak-text: #FBBF24;
+
+  /* Kanban column hovers */
+  --color-kanban-todo-hover: #263345;
+  --color-kanban-sky-hover: #1A3A60;
+  --color-kanban-leaf-hover: #14532D;
+
+  /* Overlays */
+  --color-card-badge: rgba(255, 255, 255, 0.1);
+  --color-card-btn-hover: rgba(255, 255, 255, 0.08);
 }
 
 * {

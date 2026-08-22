@@ -19,9 +19,9 @@ const columns: {
   id: Status; label: string
   accent: string; bg: string; bgHover: string; dot: string
 }[] = [
-  { id: 'todo',        label: 'A fazer',      dot: '#94A3B8', accent: 'var(--color-ink-muted)',  bg: 'var(--color-surface-sunken)', bgHover: '#E2E8F0' },
-  { id: 'in_progress', label: 'Em andamento', dot: 'var(--color-sky)',        accent: 'var(--color-sky-deep)',  bg: 'var(--color-sky-soft)',       bgHover: '#BFDBFE' },
-  { id: 'done',        label: 'Concluído',    dot: 'var(--color-leaf)',       accent: 'var(--color-leaf-deep)', bg: 'var(--color-leaf-soft)',      bgHover: '#BBF7D0' },
+  { id: 'todo',        label: 'A fazer',      dot: 'var(--color-ink-subtle)', accent: 'var(--color-ink-muted)',  bg: 'var(--color-surface-sunken)', bgHover: 'var(--color-kanban-todo-hover)' },
+  { id: 'in_progress', label: 'Em andamento', dot: 'var(--color-sky)',        accent: 'var(--color-sky-deep)',  bg: 'var(--color-sky-soft)',       bgHover: 'var(--color-kanban-sky-hover)'  },
+  { id: 'done',        label: 'Concluído',    dot: 'var(--color-leaf)',       accent: 'var(--color-leaf-deep)', bg: 'var(--color-leaf-soft)',      bgHover: 'var(--color-kanban-leaf-hover)' },
 ]
 
 function AddTaskModal({ defaultStatus, onClose }: { defaultStatus: Status; onClose: () => void }) {
@@ -201,13 +201,19 @@ export function Tasks() {
                     style={{ background: col.dot, transform: isOver ? 'scale(1.3)' : 'scale(1)' }}
                   />
                   <span className="text-sm font-bold" style={{ color: col.accent }}>{col.label}</span>
-                  <span className="text-xs font-semibold px-1.5 py-0.5 rounded-full bg-white/60 text-[var(--color-ink-muted)]">
+                  <span
+                    className="text-xs font-semibold px-1.5 py-0.5 rounded-full text-[var(--color-ink-muted)]"
+                    style={{ background: 'var(--color-card-badge)' }}
+                  >
                     {colTasks.length}
                   </span>
                 </div>
                 <button
                   onClick={() => setAddTo(col.id)}
-                  className="p-1 rounded-[var(--radius-sm)] hover:bg-white/60 text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
+                  className="p-1 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
+                  style={{ ['--tw-hover-bg' as string]: 'var(--color-card-btn-hover)' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-card-btn-hover)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = '')}
                   title={`Adicionar em ${col.label}`}
                 >
                   <Plus size={14} />
@@ -217,8 +223,8 @@ export function Tasks() {
               {/* Drop placeholder */}
               {isOver && (
                 <div
-                  className="rounded-[var(--radius-md)] border-2 border-dashed border-[var(--color-sky)] bg-white/40"
-                  style={{ height: 56, animation: 'pulse 1s ease-in-out infinite' }}
+                  className="rounded-[var(--radius-md)] border-2 border-dashed border-[var(--color-sky)]"
+                  style={{ height: 56, background: 'var(--color-card-badge)', animation: 'pulse 1s ease-in-out infinite' }}
                 />
               )}
 

@@ -9,11 +9,11 @@ interface Props {
 }
 
 const colorMap: Record<Color, string> = {
-  sky: 'bg-[var(--color-sky-soft)] text-[var(--color-sky-deep)]',
-  sun: 'bg-amber-100 text-amber-700',
-  leaf: 'bg-[var(--color-leaf-soft)] text-[var(--color-leaf-deep)]',
-  coral: 'bg-[var(--color-coral-soft)] text-[var(--color-coral)]',
-  berry: 'bg-purple-100 text-purple-700',
+  sky:     'bg-[var(--color-sky-soft)] text-[var(--color-sky-deep)]',
+  sun:     'bg-[var(--color-sun-soft)] text-[var(--color-sun-deep)]',
+  leaf:    'bg-[var(--color-leaf-soft)] text-[var(--color-leaf-deep)]',
+  coral:   'bg-[var(--color-coral-soft)] text-[var(--color-coral)]',
+  berry:   'bg-[var(--color-berry-soft)] text-[var(--color-berry-deep)]',
   neutral: 'bg-[var(--color-surface-sunken)] text-[var(--color-ink-muted)]',
 }
 
