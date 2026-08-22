@@ -1,0 +1,82 @@
+@theme {
+  /* Brand */
+  --color-sky: #3B82F6;
+  --color-sky-bright: #60A5FA;
+  --color-sky-deep: #1D4ED8;
+  --color-sky-soft: #DBEAFE;
+
+  /* Gamification */
+  --color-sun: #FBBF24;
+  --color-sun-bright: #FCD34D;
+  --color-sun-deep: #D97706;
+
+  /* Progress / Success */
+  --color-leaf: #22C55E;
+  --color-leaf-soft: #DCFCE7;
+  --color-leaf-deep: #16A34A;
+
+  /* Alerts */
+  --color-coral: #F87171;
+  --color-coral-soft: #FEE2E2;
+
+  /* Accent */
+  --color-berry: #A855F7;
+
+  /* Surfaces */
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-sunken: #F1F5F9;
+
+  /* Ink */
+  --color-ink: #0F172A;
+  --color-ink-muted: #475569;
+  --color-ink-subtle: #94A3B8;
+  --color-ink-faint: #CBD5E1;
+  --color-outline: #E2E8F0;
+  --color-outline-strong: #94A3B8;
+
+  /* Typography */
+  --font-sans: 'Atkinson Hyperlegible', system-ui, sans-serif;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+}
+
+:root {
+  --color-sky: #3B82F6;
+  --color-sky-bright: #60A5FA;
+  --color-sky-deep: #1D4ED8;
+  --color-sky-soft: #DBEAFE;
+  --color-sun: #FBBF24;
+  --color-sun-bright: #FCD34D;
+  --color-sun-deep: #D97706;
+  --color-leaf: #22C55E;
+  --color-leaf-soft: #DCFCE7;
+  --color-leaf-deep: #16A34A;
+  --color-coral: #F87171;
+  --color-coral-soft: #FEE2E2;
+  --color-berry: #A855F7;
+  --color-background: #FFFFFF;
+  --color-surface: #F8FAFC;
+  --color-surface-elevated: #FFFFFF;
+  --color-surface-sunken: #F1F5F9;
+  --color-ink: #0F172A;
+  --color-ink-muted: #475569;
+  --color-ink-subtle: #94A3B8;
+  --color-ink-faint: #CBD5E1;
+  --color-outline: #E2E8F0;
+  --color-outline-strong: #94A3B8;
+}
+
+* {
+  font-family: 'Atkinson Hyperlegible', system-ui, sans-serif;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-ink);
+}
