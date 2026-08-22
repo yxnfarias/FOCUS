@@ -4,7 +4,6 @@ import { Plus, Flame, Trash2, Target, Check } from 'lucide-react'
 import { db, type Habit } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
-import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
 import { ContributionGraph } from './ContributionGraph'
 

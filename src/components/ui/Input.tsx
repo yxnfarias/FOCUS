@@ -1,9 +1,14 @@
-import { type InputHTMLAttributes } from 'react'
+import { type InputHTMLAttributes, type SelectHTMLAttributes } from 'react'
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
   error?: string
   hint?: string
+}
+
+interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
+  label?: string
+  error?: string
 }
 
 export function Input({ label, error, hint, className = '', id, ...props }: Props) {
@@ -32,7 +37,7 @@ export function Input({ label, error, hint, className = '', id, ...props }: Prop
   )
 }
 
-export function Select({ label, error, className = '', id, children, ...props }: Props & { children: React.ReactNode }) {
+export function Select({ label, error, className = '', id, children, ...props }: SelectProps & { children: React.ReactNode }) {
   const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-')
   return (
     <div className="flex flex-col gap-1">
@@ -50,7 +55,7 @@ export function Select({ label, error, className = '', id, children, ...props }:
           ${error ? 'border-[var(--color-coral)]' : 'border-[var(--color-outline)]'}
           ${className}
         `}
-        {...(props as React.SelectHTMLAttributes<HTMLSelectElement>)}
+        {...props}
       >
         {children}
       </select>
