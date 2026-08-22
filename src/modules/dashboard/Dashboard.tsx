@@ -43,12 +43,12 @@ export function Dashboard() {
     {
       to: '/tarefas', icon: CheckSquare, label: 'Tarefas',
       value: String(pendingTasks), sub: pendingTasks === 1 ? 'pendente' : 'pendentes',
-      accent: 'var(--color-sun)', bg: '#FEF9C3',
+      accent: 'var(--color-sun)', bg: 'var(--color-sun-soft)',
     },
     {
       to: '/desejos', icon: Star, label: 'Desejos',
       value: String(pendingWishes), sub: pendingWishes === 1 ? 'na lista' : 'na lista',
-      accent: 'var(--color-berry)', bg: '#F3E8FF',
+      accent: 'var(--color-berry)', bg: 'var(--color-berry-soft)',
     },
   ]
 
@@ -62,11 +62,14 @@ export function Dashboard() {
 
       {/* Streak banner */}
       {topStreak > 0 && (
-        <div className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-[var(--radius-lg)] px-5 py-4">
-          <Flame size={24} className="text-amber-500 shrink-0" />
+        <div
+          className="flex items-center gap-3 rounded-[var(--radius-lg)] px-5 py-4 border"
+          style={{ background: 'var(--color-streak-bg)', borderColor: 'var(--color-streak-border)' }}
+        >
+          <Flame size={24} className="shrink-0" style={{ color: 'var(--color-streak-title)' }} />
           <div>
-            <p className="font-bold text-amber-800">{topStreak} dias em sequência!</p>
-            <p className="text-sm text-amber-600">Continue assim — você está construindo algo incrível.</p>
+            <p className="font-bold" style={{ color: 'var(--color-streak-title)' }}>{topStreak} dias em sequência!</p>
+            <p className="text-sm" style={{ color: 'var(--color-streak-text)' }}>Continue assim — você está construindo algo incrível.</p>
           </div>
         </div>
       )}
