@@ -1,7 +1,8 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, Wallet, Target, CheckSquare, Star,
+  LayoutDashboard, Wallet, Target, CheckSquare, Star, Sun, Moon,
 } from 'lucide-react'
+import { useTheme } from '../hooks/useTheme'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Início', end: true },
@@ -12,6 +13,8 @@ const navItems = [
 ]
 
 export function AppShell() {
+  const { theme, toggle } = useTheme()
+
   return (
     <div className="min-h-screen flex bg-[var(--color-surface)]">
       {/* Sidebar */}
@@ -48,16 +51,30 @@ export function AppShell() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-[var(--color-outline)]">
+        <div className="px-5 py-4 border-t border-[var(--color-outline)] flex items-center justify-between">
           <p className="text-xs text-[var(--color-ink-faint)]">v1.0 · Offline-first</p>
+          <button
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
         </div>
       </aside>
 
       {/* Content */}
       <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top bar (mobile only) */}
-        <header className="md:hidden sticky top-0 z-40 bg-[var(--color-surface-elevated)] border-b border-[var(--color-outline)] px-4 py-3 flex items-center gap-2">
+        <header className="md:hidden sticky top-0 z-40 bg-[var(--color-surface-elevated)] border-b border-[var(--color-outline)] px-4 py-3 flex items-center justify-between">
           <span className="text-lg font-bold text-[var(--color-sky)]">FOCUS</span>
+          <button
+            onClick={toggle}
+            aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
         </header>
 
         {/* Page */}
