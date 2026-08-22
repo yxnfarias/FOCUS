@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { Upload, FileText, CheckCircle, AlertCircle, X, Download, TrendingUp, TrendingDown } from 'lucide-react'
+import { Upload, CheckCircle, AlertCircle, X, Download, TrendingUp, TrendingDown } from 'lucide-react'
 import { db } from '../../db'
 import { parseExtract, CSV_TEMPLATE, type ParsedTransaction } from '../../lib/extractParser'
 import { Button } from '../../components/ui/Button'
