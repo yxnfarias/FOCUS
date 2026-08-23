@@ -1,7 +1,16 @@
 import Dexie, { type EntityTable } from 'dexie'
 
+export interface User {
+  id?: number
+  name: string
+  email: string
+  passwordHash: string
+  createdAt: string
+}
+
 export interface Transaction {
   id?: number
+  userId: number
   type: 'income' | 'expense'
   amount: number
   category: string
@@ -14,6 +23,7 @@ export interface Transaction {
 
 export interface ImportJob {
   id?: number
+  userId: number
   fileName: string
   fileFormat: 'OFX' | 'CSV'
   status: 'completed' | 'failed'
@@ -26,6 +36,7 @@ export interface ImportJob {
 
 export interface Habit {
   id?: number
+  userId: number
   name: string
   description: string
   color: string
@@ -38,6 +49,7 @@ export interface Habit {
 
 export interface HabitLog {
   id?: number
+  userId: number
   habitId: number
   date: string
   completed: boolean
@@ -45,6 +57,7 @@ export interface HabitLog {
 
 export interface Task {
   id?: number
+  userId: number
   title: string
   description: string
   priority: 'low' | 'medium' | 'high'
@@ -56,6 +69,7 @@ export interface Task {
 
 export interface Project {
   id?: number
+  userId: number
   name: string
   color: string
   createdAt: string
@@ -63,6 +77,7 @@ export interface Project {
 
 export interface WishItem {
   id?: number
+  userId: number
   title: string
   description: string
   category: 'purchase' | 'experience' | 'goal' | 'milestone'
@@ -82,6 +97,7 @@ class FocusDB extends Dexie {
   tasks!: EntityTable<Task, 'id'>
   projects!: EntityTable<Project, 'id'>
   wishItems!: EntityTable<WishItem, 'id'>
+  users!: EntityTable<User, 'id'>
 
   constructor() {
     super('FocusDB')
@@ -93,7 +109,6 @@ class FocusDB extends Dexie {
       projects: '++id',
       wishItems: '++id, category, completed',
     })
-    // v2: adds fitid index + importJobs table
     this.version(2).stores({
       transactions: '++id, type, category, date, fitid, importJobId',
       importJobs: '++id',
@@ -102,6 +117,16 @@ class FocusDB extends Dexie {
       tasks: '++id, status, priority, dueDate, projectId',
       projects: '++id',
       wishItems: '++id, category, completed',
+    })
+    this.version(3).stores({
+      transactions: '++id, type, category, date, fitid, importJobId, userId',
+      importJobs: '++id, userId',
+      habits: '++id, frequency, userId',
+      habitLogs: '++id, habitId, date, userId',
+      tasks: '++id, status, priority, dueDate, projectId, userId',
+      projects: '++id, userId',
+      wishItems: '++id, category, completed, userId',
+      users: '++id, &email',
     })
   }
 }

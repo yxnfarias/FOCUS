@@ -19,10 +19,11 @@ interface DoneResult {
 }
 
 interface Props {
+  userId: number
   onClose: () => void
 }
 
-export function ImportModal({ onClose }: Props) {
+export function ImportModal({ userId, onClose }: Props) {
   const [step, setStep]           = useState<Step>('upload')
   const [dragging, setDragging]   = useState(false)
   const [fileName, setFileName]   = useState('')
@@ -99,6 +100,7 @@ export function ImportModal({ onClose }: Props) {
     const ext = fileName.split('.').pop()?.toUpperCase() as 'OFX' | 'CSV'
 
     const jobId = await db.importJobs.add({
+      userId,
       fileName,
       fileFormat: ext === 'OFX' ? 'OFX' : 'CSV',
       status: 'completed',
@@ -111,6 +113,7 @@ export function ImportModal({ onClose }: Props) {
     for (const row of newRows) {
       try {
         await db.transactions.add({
+          userId,
           type: row.type,
           amount: row.amount,
           category: row.category || autoCategory(row.description),

@@ -7,11 +7,12 @@ import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
 import { ImportModal } from './ImportModal'
+import { useAuth } from '../../contexts/AuthContext'
 
 const INCOME_CATEGORIES = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outro']
 const EXPENSE_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer', 'Roupas', 'Assinaturas', 'Outro']
 
-function AddTransactionModal({ onClose }: { onClose: () => void }) {
+function AddTransactionModal({ userId, onClose }: { userId: number; onClose: () => void }) {
   const [type, setType]           = useState<'income' | 'expense'>('expense')
   const [amount, setAmount]       = useState('')
   const [category, setCategory]   = useState('')
@@ -23,7 +24,7 @@ function AddTransactionModal({ onClose }: { onClose: () => void }) {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!amount || !category) return
-    await db.transactions.add({ type, amount: parseFloat(amount), category, description, date, createdAt: new Date().toISOString() })
+    await db.transactions.add({ userId, type, amount: parseFloat(amount), category, description, date, createdAt: new Date().toISOString() })
     onClose()
   }
 
@@ -58,12 +59,20 @@ function AddTransactionModal({ onClose }: { onClose: () => void }) {
 }
 
 export function Finances() {
+  const { user } = useAuth()
+  const userId = user!.id!
   const [showModal, setShowModal]         = useState(false)
   const [showImport, setShowImport]       = useState(false)
   const [showImportHistory, setShowImportHistory] = useState(false)
 
-  const transactions = useLiveQuery(() => db.transactions.orderBy('date').reverse().toArray(), [])
-  const importJobs   = useLiveQuery(() => db.importJobs.toArray().then(j => j.sort((a, b) => b.createdAt.localeCompare(a.createdAt))), [])
+  const transactions = useLiveQuery(() =>
+    db.transactions.where('userId').equals(userId).toArray()
+      .then(arr => arr.sort((a, b) => b.date.localeCompare(a.date))),
+    [userId])
+  const importJobs = useLiveQuery(() =>
+    db.importJobs.where('userId').equals(userId).toArray()
+      .then(j => j.sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
+    [userId])
 
   const income  = transactions?.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0) ?? 0
   const expense = transactions?.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0) ?? 0
@@ -173,8 +182,8 @@ export function Finances() {
         ))}
       </div>
 
-      {showModal  && <AddTransactionModal onClose={() => setShowModal(false)} />}
-      {showImport && <ImportModal onClose={() => setShowImport(false)} />}
+      {showModal  && <AddTransactionModal userId={userId} onClose={() => setShowModal(false)} />}
+      {showImport && <ImportModal userId={userId} onClose={() => setShowImport(false)} />}
     </div>
   )
 }

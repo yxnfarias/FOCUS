@@ -3,6 +3,7 @@ import { Wallet, Target, CheckSquare, Star, TrendingUp, Flame } from 'lucide-rea
 import { Link } from 'react-router-dom'
 import { db } from '../../db'
 import { Card } from '../../components/ui/Card'
+import { useAuth } from '../../contexts/AuthContext'
 
 function greeting() {
   const h = new Date().getHours()
@@ -11,21 +12,30 @@ function greeting() {
   return 'Boa noite'
 }
 
+function firstName(name: string) {
+  return name.split(' ')[0]
+}
+
 export function Dashboard() {
+  const { user } = useAuth()
+  const userId = user!.id!
   const today = new Date().toISOString().split('T')[0]
 
-  const transactions = useLiveQuery(() => db.transactions.toArray(), [])
-  const habits       = useLiveQuery(() => db.habits.toArray(), [])
-  const habitLogs    = useLiveQuery(() => db.habitLogs.where('date').equals(today).toArray(), [today])
-  const tasks        = useLiveQuery(() => db.tasks.toArray().then(all => all.filter(t => t.status !== 'done')), [])
-  const wishes       = useLiveQuery(() => db.wishItems.toArray().then(all => all.filter(i => !i.completed)), [])
+  const transactions = useLiveQuery(() => db.transactions.where('userId').equals(userId).toArray(), [userId])
+  const habits       = useLiveQuery(() => db.habits.where('userId').equals(userId).toArray(), [userId])
+  const habitLogs    = useLiveQuery(() =>
+    db.habitLogs.where('date').equals(today).filter(l => l.userId === userId).toArray(), [today, userId])
+  const tasks        = useLiveQuery(() =>
+    db.tasks.where('userId').equals(userId).toArray().then(all => all.filter(t => t.status !== 'done')), [userId])
+  const wishes       = useLiveQuery(() =>
+    db.wishItems.where('userId').equals(userId).toArray().then(all => all.filter(i => !i.completed)), [userId])
 
-  const balance           = transactions?.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0) ?? 0
-  const completedToday    = habitLogs?.length ?? 0
-  const totalHabits       = habits?.length ?? 0
-  const pendingTasks      = tasks?.length ?? 0
-  const pendingWishes     = wishes?.length ?? 0
-  const topStreak         = habits?.reduce((max, h) => h.streak > max ? h.streak : max, 0) ?? 0
+  const balance        = transactions?.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0) ?? 0
+  const completedToday = habitLogs?.length ?? 0
+  const totalHabits    = habits?.length ?? 0
+  const pendingTasks   = tasks?.length ?? 0
+  const pendingWishes  = wishes?.length ?? 0
+  const topStreak      = habits?.reduce((max, h) => h.streak > max ? h.streak : max, 0) ?? 0
   const fmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 
   const pillars = [
@@ -47,7 +57,7 @@ export function Dashboard() {
     },
     {
       to: '/desejos', icon: Star, label: 'Desejos',
-      value: String(pendingWishes), sub: pendingWishes === 1 ? 'na lista' : 'na lista',
+      value: String(pendingWishes), sub: 'na lista',
       accent: 'var(--color-berry)', bg: 'var(--color-berry-soft)',
     },
   ]
@@ -56,7 +66,9 @@ export function Dashboard() {
     <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="text-center md:text-left">
-        <h1 className="text-3xl font-bold text-[var(--color-ink)]">{greeting()} 👋</h1>
+        <h1 className="text-3xl font-bold text-[var(--color-ink)]">
+          {greeting()}, {firstName(user!.name)}! 👋
+        </h1>
         <p className="text-[var(--color-ink-muted)] mt-1">Aqui está o resumo do seu dia.</p>
       </div>
 

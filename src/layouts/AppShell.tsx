@@ -1,8 +1,9 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, Wallet, Target, CheckSquare, Star, Sun, Moon,
+  LayoutDashboard, Wallet, Target, CheckSquare, Star, Sun, Moon, LogOut,
 } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
+import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Início', end: true },
@@ -12,8 +13,13 @@ const navItems = [
   { to: '/desejos', icon: Star, label: 'Desejos' },
 ]
 
+function initials(name: string) {
+  return name.split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase()
+}
+
 export function AppShell() {
   const { theme, toggle } = useTheme()
+  const { user, logout } = useAuth()
 
   return (
     <div className="min-h-screen flex bg-[var(--color-surface)]">
@@ -50,16 +56,40 @@ export function AppShell() {
           ))}
         </nav>
 
-        {/* Footer */}
-        <div className="px-5 py-4 border-t border-[var(--color-outline)] flex items-center justify-between">
-          <p className="text-xs text-[var(--color-ink-faint)]">v1.0 · Offline-first</p>
-          <button
-            onClick={toggle}
-            aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
-          </button>
+        {/* User + Footer */}
+        <div className="border-t border-[var(--color-outline)]">
+          {/* User info */}
+          {user && (
+            <div className="px-4 py-3 flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[var(--color-sky-soft)] flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-[var(--color-sky-deep)]">{initials(user.name)}</span>
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-[var(--color-ink)] truncate">{user.name}</p>
+                <p className="text-[10px] text-[var(--color-ink-faint)] truncate">{user.email}</p>
+              </div>
+            </div>
+          )}
+          <div className="px-4 py-3 flex items-center justify-between border-t border-[var(--color-outline)]">
+            <p className="text-xs text-[var(--color-ink-faint)]">v1.0 · Offline-first</p>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={toggle}
+                aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
+              >
+                {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+              </button>
+              <button
+                onClick={logout}
+                aria-label="Sair"
+                title="Sair"
+                className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-coral-soft)] hover:text-[var(--color-coral)] transition-colors"
+              >
+                <LogOut size={15} />
+              </button>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -68,13 +98,22 @@ export function AppShell() {
         {/* Top bar (mobile only) */}
         <header className="md:hidden sticky top-0 z-40 bg-[var(--color-surface-elevated)] border-b border-[var(--color-outline)] px-4 py-3 flex items-center justify-between">
           <span className="text-lg font-bold text-[var(--color-sky)]">FOCUS</span>
-          <button
-            onClick={toggle}
-            aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
-            className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              onClick={toggle}
+              aria-label={theme === 'dark' ? 'Modo claro' : 'Modo escuro'}
+              className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)] transition-colors"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              onClick={logout}
+              aria-label="Sair"
+              className="p-1.5 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:bg-[var(--color-coral-soft)] hover:text-[var(--color-coral)] transition-colors"
+            >
+              <LogOut size={18} />
+            </button>
+          </div>
         </header>
 
         {/* Page */}
