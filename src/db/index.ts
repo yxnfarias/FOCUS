@@ -89,6 +89,17 @@ export interface WishItem {
   createdAt: string
 }
 
+export interface DiaryEntry {
+  id?: number
+  userId: number
+  date: string
+  title: string
+  content: string
+  mood?: string
+  createdAt: string
+  updatedAt: string
+}
+
 class FocusDB extends Dexie {
   transactions!: EntityTable<Transaction, 'id'>
   importJobs!: EntityTable<ImportJob, 'id'>
@@ -98,6 +109,7 @@ class FocusDB extends Dexie {
   projects!: EntityTable<Project, 'id'>
   wishItems!: EntityTable<WishItem, 'id'>
   users!: EntityTable<User, 'id'>
+  diaryEntries!: EntityTable<DiaryEntry, 'id'>
 
   constructor() {
     super('FocusDB')
@@ -127,6 +139,17 @@ class FocusDB extends Dexie {
       projects: '++id, userId',
       wishItems: '++id, category, completed, userId',
       users: '++id, &email',
+    })
+    this.version(4).stores({
+      transactions: '++id, type, category, date, fitid, importJobId, userId',
+      importJobs: '++id, userId',
+      habits: '++id, frequency, userId',
+      habitLogs: '++id, habitId, date, userId',
+      tasks: '++id, status, priority, dueDate, projectId, userId',
+      projects: '++id, userId',
+      wishItems: '++id, category, completed, userId',
+      users: '++id, &email',
+      diaryEntries: '++id, userId, date',
     })
   }
 }
