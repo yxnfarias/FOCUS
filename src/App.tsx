@@ -6,6 +6,7 @@ import { Finances } from './modules/finances/Finances'
 import { Habits } from './modules/habits/Habits'
 import { Tasks } from './modules/tasks/Tasks'
 import { Wishlist } from './modules/wishlist/Wishlist'
+import { Diary } from './modules/diary/Diary'
 import { LoginScreen } from './modules/auth/LoginScreen'
 
 function AppContent() {
@@ -20,6 +21,7 @@ function AppContent() {
           <Route path="habitos" element={<Habits />} />
           <Route path="tarefas" element={<Tasks />} />
           <Route path="desejos" element={<Wishlist />} />
+          <Route path="diario" element={<Diary />} />
         </Route>
       </Routes>
     </BrowserRouter>

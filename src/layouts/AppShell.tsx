@@ -1,6 +1,6 @@
 import { NavLink, Outlet } from 'react-router-dom'
 import {
-  LayoutDashboard, Wallet, Target, CheckSquare, Star, Sun, Moon, LogOut,
+  LayoutDashboard, Wallet, Target, CheckSquare, Star, BookOpen, Sun, Moon, LogOut,
 } from 'lucide-react'
 import { useTheme } from '../hooks/useTheme'
 import { useAuth } from '../contexts/AuthContext'
@@ -11,6 +11,7 @@ const navItems = [
   { to: '/habitos', icon: Target, label: 'Hábitos' },
   { to: '/tarefas', icon: CheckSquare, label: 'Tarefas' },
   { to: '/desejos', icon: Star, label: 'Desejos' },
+  { to: '/diario', icon: BookOpen, label: 'Diário' },
 ]
 
 function initials(name: string) {
