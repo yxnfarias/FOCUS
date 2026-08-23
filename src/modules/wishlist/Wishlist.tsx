@@ -141,7 +141,7 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
     >
       {/* Cover image or placeholder */}
       {item.imageUrl ? (
-        <div className="relative h-48 w-full mb-3">
+        <div className="relative h-36 w-full mb-2">
           <img
             src={item.imageUrl}
             alt={item.title}
@@ -149,16 +149,16 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
           />
           {item.completed && (
             <div className="absolute inset-0 rounded-[var(--radius-lg)] bg-[var(--color-leaf)] bg-opacity-20 flex items-center justify-center">
-              <Check size={36} className="text-[var(--color-leaf-deep)]" strokeWidth={3} />
+              <Check size={28} className="text-[var(--color-leaf-deep)]" strokeWidth={3} />
             </div>
           )}
         </div>
       ) : (
         <div
-          className="h-28 w-full mb-3 rounded-[var(--radius-lg)] flex items-center justify-center"
+          className="h-20 w-full mb-2 rounded-[var(--radius-lg)] flex items-center justify-center"
           style={{ background: `${cat.color}18` }}
         >
-          <CatIcon size={40} style={{ color: cat.color }} />
+          <CatIcon size={30} style={{ color: cat.color }} />
         </div>
       )}
 
@@ -179,7 +179,7 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
 
         {/* Title */}
         <h3
-          className={`text-xl font-bold leading-tight ${item.completed ? 'line-through text-[var(--color-ink-subtle)]' : 'text-[var(--color-ink)]'}`}
+          className={`text-base font-bold leading-tight ${item.completed ? 'line-through text-[var(--color-ink-subtle)]' : 'text-[var(--color-ink)]'}`}
         >
           {item.title}
         </h3>
@@ -201,7 +201,7 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
           {item.price !== undefined && (
             <>
               <p className="text-xs text-[var(--color-ink-subtle)]">Valor estimado</p>
-              <p className="text-base font-bold text-[var(--color-ink)]">
+              <p className="text-sm font-bold text-[var(--color-ink)]">
                 R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </>
@@ -329,7 +329,7 @@ export function Wishlist() {
           <p className="text-sm text-[var(--color-ink-faint)] mt-1">O que você quer conquistar?</p>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((item: WishItem) => (
             <WishCard
               key={item.id}
