@@ -1,10 +1,40 @@
-import { useState } from 'react'
+import { useState, memo } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { Sun, Moon } from 'lucide-react'
-import { AnimatedGradient } from '@/components/ui/animated-gradient'
+import { AnimatedGradient, type GradientConfig, type NoiseConfig } from '@/components/ui/animated-gradient'
 
 type Mode = 'login' | 'register'
+
+const GRADIENT_CONFIG: GradientConfig = {
+  preset: 'custom',
+  color1: '#000000',
+  color2: '#1a0033',
+  color3: '#6d28d9',
+  rotation: -30,
+  proportion: 55,
+  scale: 0.6,
+  speed: 12,
+  distortion: 30,
+  swirl: 70,
+  swirlIterations: 10,
+  softness: 90,
+  offset: 100,
+  shape: 'Edge',
+  shapeSize: 45,
+}
+const NOISE_CONFIG: NoiseConfig = { opacity: 0.35, scale: 1.2 }
+
+const GradientPanel = memo(function GradientPanel() {
+  return (
+    <div className="hidden md:flex relative flex-1 items-center justify-center overflow-hidden">
+      <AnimatedGradient config={GRADIENT_CONFIG} noise={NOISE_CONFIG} />
+      <span className="relative z-10 text-5xl font-black tracking-widest text-white select-none">
+        FOCUS
+      </span>
+    </div>
+  )
+})
 
 export function LoginScreen() {
   const { login, register } = useAuth()
@@ -55,11 +85,6 @@ export function LoginScreen() {
         >
           {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
         </button>
-
-        {/* Logo */}
-        <div>
-          <span className="text-2xl font-bold tracking-tight text-[var(--color-sky)]">FOCUS</span>
-        </div>
 
         {/* Centered form */}
         <div className="flex flex-1 items-center justify-center">
@@ -174,31 +199,7 @@ export function LoginScreen() {
       </div>
 
       {/* ── Right panel — animated gradient (hidden on mobile) ── */}
-      <div className="hidden md:flex relative flex-1 items-center justify-center overflow-hidden">
-        <AnimatedGradient
-          config={{
-            preset: 'custom',
-            color1: '#000000',
-            color2: '#1a0033',
-            color3: '#6d28d9',
-            rotation: -30,
-            proportion: 55,
-            scale: 0.6,
-            speed: 12,
-            distortion: 30,
-            swirl: 70,
-            swirlIterations: 10,
-            softness: 90,
-            offset: 100,
-            shape: 'Edge',
-            shapeSize: 45,
-          }}
-          noise={{ opacity: 0.35, scale: 1.2 }}
-        />
-        <span className="relative z-10 text-5xl font-black tracking-widest text-white select-none">
-          FOCUS
-        </span>
-      </div>
+      <GradientPanel />
     </div>
   )
 }
