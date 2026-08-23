@@ -2,18 +2,17 @@ import { useMemo, useRef, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '../../db'
 import { useTheme } from '../../hooks/useTheme'
+import { useAuth } from '../../contexts/AuthContext'
 
-// 52 semanas = ~1 ano. Com CELL=11 e gap=2, em ~550px de container
-// o SVG escala para ~0.78x → células ficam ~9px (tamanho ideal)
 const WEEKS = 52
 const DAYS  = 7
 const CELL  = 11
 const GAP   = 2
-const LW    = 26   // largura da coluna de labels (Seg/Qua/Sex)
-const LH    = 14   // altura da linha de labels de meses
+const LW    = 26
+const LH    = 14
 
-const SVG_W = LW + WEEKS * (CELL + GAP) - GAP  // ≈ 701
-const SVG_H = LH + DAYS  * (CELL + GAP) - GAP  // ≈ 103
+const SVG_W = LW + WEEKS * (CELL + GAP) - GAP
+const SVG_H = LH + DAYS  * (CELL + GAP) - GAP
 
 const DAY_LABELS  = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb']
 const MONTH_NAMES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -48,6 +47,8 @@ function cellColor(ratio: number, future: boolean, dark: boolean): string {
 interface Tip { x: number; y: number; date: string; done: number; total: number }
 
 export function ContributionGraph() {
+  const { user } = useAuth()
+  const userId = user!.id!
   const wrapRef = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
   const { theme } = useTheme()
@@ -56,10 +57,13 @@ export function ContributionGraph() {
   const today = toISO(new Date())
   const grid  = useMemo(buildGrid, [])
 
-  const habits = useLiveQuery(() => db.habits.toArray(), [])
+  const habits = useLiveQuery(() => db.habits.where('userId').equals(userId).toArray(), [userId])
   const logs   = useLiveQuery(
-    () => db.habitLogs.where('date').aboveOrEqual(grid[0][0]).toArray(),
-    [grid[0][0]]
+    () => db.habitLogs
+      .where('date').aboveOrEqual(grid[0][0])
+      .filter(l => l.userId === userId)
+      .toArray(),
+    [grid[0][0], userId]
   )
 
   const logMap = useMemo(() => {

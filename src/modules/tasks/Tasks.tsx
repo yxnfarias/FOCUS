@@ -5,6 +5,7 @@ import { db, type Task } from '../../db'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
+import { useAuth } from '../../contexts/AuthContext'
 
 type Priority = 'low' | 'medium' | 'high'
 type Status   = 'todo' | 'in_progress' | 'done'
@@ -24,7 +25,7 @@ const columns: {
   { id: 'done',        label: 'Concluído',    dot: 'var(--color-leaf)',       accent: 'var(--color-leaf-deep)', bg: 'var(--color-leaf-soft)',      bgHover: 'var(--color-kanban-leaf-hover)' },
 ]
 
-function AddTaskModal({ defaultStatus, onClose }: { defaultStatus: Status; onClose: () => void }) {
+function AddTaskModal({ defaultStatus, userId, onClose }: { defaultStatus: Status; userId: number; onClose: () => void }) {
   const [title, setTitle]             = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority]       = useState<Priority>('medium')
@@ -34,6 +35,7 @@ function AddTaskModal({ defaultStatus, onClose }: { defaultStatus: Status; onClo
     e.preventDefault()
     if (!title.trim()) return
     await db.tasks.add({
+      userId,
       title: title.trim(), description, priority,
       dueDate: dueDate || undefined, status: defaultStatus,
       createdAt: new Date().toISOString(),
@@ -128,12 +130,16 @@ function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
 }
 
 export function Tasks() {
+  const { user } = useAuth()
+  const userId = user!.id!
   const [addTo, setAddTo]   = useState<Status | null>(null)
   const [dragId, setDragId] = useState<number | null>(null)
   const [overCol, setOverCol] = useState<Status | null>(null)
 
   const tasks = useLiveQuery(() =>
-    db.tasks.toArray().then(all => all.sort((a, b) => a.createdAt.localeCompare(b.createdAt))), [])
+    db.tasks.where('userId').equals(userId).toArray()
+      .then(all => all.sort((a, b) => a.createdAt.localeCompare(b.createdAt))),
+    [userId])
 
   const byStatus = (s: Status) => tasks?.filter(t => t.status === s) ?? []
 
@@ -253,7 +259,7 @@ export function Tasks() {
         })}
       </div>
 
-      {addTo && <AddTaskModal defaultStatus={addTo} onClose={() => setAddTo(null)} />}
+      {addTo && <AddTaskModal defaultStatus={addTo} userId={userId} onClose={() => setAddTo(null)} />}
     </div>
   )
 }

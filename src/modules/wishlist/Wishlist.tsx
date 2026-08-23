@@ -6,6 +6,7 @@ import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
+import { useAuth } from '../../contexts/AuthContext'
 
 type Category = 'purchase' | 'experience' | 'goal' | 'milestone'
 type Priority = 'low' | 'medium' | 'high'
@@ -23,7 +24,7 @@ const priorityConfig: Record<Priority, { label: string; color: 'leaf' | 'sun' | 
   high:   { label: 'Alta',  color: 'coral' },
 }
 
-function AddWishModal({ onClose }: { onClose: () => void }) {
+function AddWishModal({ userId, onClose }: { userId: number; onClose: () => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<Category>('purchase')
@@ -45,6 +46,7 @@ function AddWishModal({ onClose }: { onClose: () => void }) {
     e.preventDefault()
     if (!title.trim()) return
     await db.wishItems.add({
+      userId,
       title: title.trim(),
       description,
       category,
@@ -245,11 +247,15 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
 }
 
 export function Wishlist() {
+  const { user } = useAuth()
+  const userId = user!.id!
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState<Category | 'all'>('all')
 
   const items = useLiveQuery(() =>
-    db.wishItems.toArray().then(arr => arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt))), [])
+    db.wishItems.where('userId').equals(userId).toArray()
+      .then(arr => arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
+    [userId])
 
   async function toggleComplete(item: WishItem) {
     if (!item.id) return
@@ -341,7 +347,7 @@ export function Wishlist() {
         </div>
       )}
 
-      {showModal && <AddWishModal onClose={() => setShowModal(false)} />}
+      {showModal && <AddWishModal userId={userId} onClose={() => setShowModal(false)} />}
     </div>
   )
 }

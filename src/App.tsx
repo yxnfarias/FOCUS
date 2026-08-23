@@ -1,12 +1,16 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { AppShell } from './layouts/AppShell'
 import { Dashboard } from './modules/dashboard/Dashboard'
 import { Finances } from './modules/finances/Finances'
 import { Habits } from './modules/habits/Habits'
 import { Tasks } from './modules/tasks/Tasks'
 import { Wishlist } from './modules/wishlist/Wishlist'
+import { LoginScreen } from './modules/auth/LoginScreen'
 
-export default function App() {
+function AppContent() {
+  const { user } = useAuth()
+  if (!user) return <LoginScreen />
   return (
     <BrowserRouter>
       <Routes>
@@ -19,5 +23,13 @@ export default function App() {
         </Route>
       </Routes>
     </BrowserRouter>
+  )
+}
+
+export default function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   )
 }
