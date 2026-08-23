@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../hooks/useTheme'
 import { Sun, Moon } from 'lucide-react'
+import { AnimatedGradient } from '@/components/ui/animated-gradient'
 
 type Mode = 'login' | 'register'
 
@@ -172,22 +173,31 @@ export function LoginScreen() {
         </div>
       </div>
 
-      {/* ── Right panel — branding (hidden on mobile) ── */}
-      <div className="hidden md:flex flex-1 flex-col justify-between bg-zinc-900 p-12 text-white dark:bg-zinc-950">
-        <div>
-          <span className="text-lg font-bold tracking-tight">FOCUS</span>
-        </div>
-
-        <blockquote className="space-y-4">
-          <p className="text-xl font-light leading-relaxed text-zinc-100">
-            "A disciplina é a ponte entre metas e realizações. Cada hábito construído hoje é um passo em direção à versão que você quer ser amanhã."
-          </p>
-          <footer className="text-sm text-zinc-400">— Organização Pessoal</footer>
-        </blockquote>
-
-        <p className="text-xs text-zinc-500">
-          Offline-first · Seus dados, seu controle.
-        </p>
+      {/* ── Right panel — animated gradient (hidden on mobile) ── */}
+      <div className="hidden md:flex relative flex-1 items-center justify-center overflow-hidden">
+        <AnimatedGradient
+          config={{
+            preset: 'custom',
+            color1: '#000000',
+            color2: '#1a0033',
+            color3: '#6d28d9',
+            rotation: -30,
+            proportion: 55,
+            scale: 0.6,
+            speed: 12,
+            distortion: 30,
+            swirl: 70,
+            swirlIterations: 10,
+            softness: 90,
+            offset: 100,
+            shape: 'Edge',
+            shapeSize: 45,
+          }}
+          noise={{ opacity: 0.35, scale: 1.2 }}
+        />
+        <span className="relative z-10 text-5xl font-black tracking-widest text-white select-none">
+          FOCUS
+        </span>
       </div>
     </div>
   )
