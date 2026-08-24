@@ -4,8 +4,6 @@ import { Plus, Trash2, BookOpen, Save } from 'lucide-react'
 import { db, type DiaryEntry } from '../../db'
 import { useAuth } from '../../contexts/AuthContext'
 
-const MOODS = ['😊', '😐', '😢', '😤', '🥰', '😴', '🤔', '🎉']
-
 function formatDate(dateStr: string) {
   return new Date(dateStr + 'T00:00:00').toLocaleDateString('pt-BR', {
     weekday: 'long',
@@ -32,7 +30,6 @@ export function Diary() {
   const [selectedId, setSelectedId] = useState<number | 'new' | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
-  const [mood, setMood] = useState('')
   const [date, setDate] = useState(todayISO())
   const [saved, setSaved] = useState(false)
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -41,7 +38,6 @@ export function Diary() {
     setSelectedId(entry.id!)
     setTitle(entry.title)
     setContent(entry.content)
-    setMood(entry.mood ?? '')
     setDate(entry.date)
     setSaved(false)
   }
@@ -50,7 +46,6 @@ export function Diary() {
     setSelectedId('new')
     setTitle('')
     setContent('')
-    setMood('')
     setDate(todayISO())
     setSaved(false)
   }
@@ -59,11 +54,11 @@ export function Diary() {
     const now = new Date().toISOString()
     if (selectedId === 'new') {
       const id = await db.diaryEntries.add({
-        userId, title, content, mood, date, createdAt: now, updatedAt: now,
+        userId, title, content, mood: '', date, createdAt: now, updatedAt: now,
       })
       setSelectedId(id as number)
     } else if (selectedId !== null) {
-      await db.diaryEntries.update(selectedId, { title, content, mood, date, updatedAt: now })
+      await db.diaryEntries.update(selectedId, { title, content, date, updatedAt: now })
     }
     setSaved(true)
   }
@@ -74,7 +69,6 @@ export function Diary() {
       setSelectedId(null)
       setTitle('')
       setContent('')
-      setMood('')
     }
   }
 
@@ -86,7 +80,7 @@ export function Diary() {
     autoSaveRef.current = setTimeout(save, 1500)
     return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [title, content, mood, date])
+  }, [title, content, date])
 
   const hasEditor = selectedId !== null
 
@@ -128,11 +122,10 @@ export function Diary() {
                   : 'border-[var(--color-outline)] bg-[var(--color-surface-elevated)] hover:border-[var(--color-sky)]/40'
               }`}
             >
-              <div className="flex items-center justify-between gap-1">
+              <div className="flex items-center gap-1">
                 <span className="text-xs font-bold text-[var(--color-ink-muted)] capitalize truncate">
                   {new Date(entry.date + 'T00:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                 </span>
-                {entry.mood && <span className="text-sm">{entry.mood}</span>}
               </div>
               <p className="text-sm font-semibold text-[var(--color-ink)] truncate mt-0.5">
                 {entry.title || 'Sem título'}
@@ -170,7 +163,7 @@ export function Diary() {
                 }}
               />
 
-              {/* Top bar with date + mood */}
+              {/* Top bar with date */}
               <div className="relative flex items-center gap-3 px-6 pt-4 pb-3 border-b border-[var(--color-outline)]">
                 <input
                   type="date"
@@ -181,17 +174,6 @@ export function Diary() {
                 <span className="text-xs text-[var(--color-ink-faint)] capitalize flex-1">
                   {formatDate(date)}
                 </span>
-                <div className="flex gap-1">
-                  {MOODS.map(m => (
-                    <button
-                      key={m}
-                      onClick={() => setMood(mood === m ? '' : m)}
-                      className={`text-base rounded transition-transform hover:scale-125 ${mood === m ? 'scale-125' : 'opacity-50 hover:opacity-100'}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               {/* Title */}
