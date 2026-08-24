@@ -100,6 +100,21 @@ export interface DiaryEntry {
   updatedAt: string
 }
 
+export type InvestmentType = 'stock' | 'fii' | 'etf' | 'bdr' | 'crypto' | 'fixed'
+
+export interface Investment {
+  id?: number
+  userId: number
+  ticker: string
+  name: string
+  type: InvestmentType
+  quantity: number
+  avgPrice: number
+  currentPrice: number
+  createdAt: string
+  updatedAt: string
+}
+
 class FocusDB extends Dexie {
   transactions!: EntityTable<Transaction, 'id'>
   importJobs!: EntityTable<ImportJob, 'id'>
@@ -110,6 +125,7 @@ class FocusDB extends Dexie {
   wishItems!: EntityTable<WishItem, 'id'>
   users!: EntityTable<User, 'id'>
   diaryEntries!: EntityTable<DiaryEntry, 'id'>
+  investments!: EntityTable<Investment, 'id'>
 
   constructor() {
     super('FocusDB')
@@ -150,6 +166,18 @@ class FocusDB extends Dexie {
       wishItems: '++id, category, completed, userId',
       users: '++id, &email',
       diaryEntries: '++id, userId, date',
+    })
+    this.version(5).stores({
+      transactions: '++id, type, category, date, fitid, importJobId, userId',
+      importJobs: '++id, userId',
+      habits: '++id, frequency, userId',
+      habitLogs: '++id, habitId, date, userId',
+      tasks: '++id, status, priority, dueDate, projectId, userId',
+      projects: '++id, userId',
+      wishItems: '++id, category, completed, userId',
+      users: '++id, &email',
+      diaryEntries: '++id, userId, date',
+      investments: '++id, userId, ticker',
     })
   }
 }

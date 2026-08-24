@@ -9,8 +9,8 @@ type Mode = 'login' | 'register'
 const GRADIENT_CONFIG: GradientConfig = {
   preset: 'custom',
   color1: '#000000',
-  color2: '#1a0033',
-  color3: '#6d28d9',
+  color2: '#141E2E',
+  color3: '#1e3a5c',
   rotation: -30,
   proportion: 55,
   scale: 0.6,

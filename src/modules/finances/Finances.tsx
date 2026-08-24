@@ -8,6 +8,9 @@ import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
 import { ImportModal } from './ImportModal'
 import { useAuth } from '../../contexts/AuthContext'
+import { Investments } from './Investments'
+
+type FinanceTab = 'extrato' | 'investimentos'
 
 const INCOME_CATEGORIES = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outro']
 const EXPENSE_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer', 'Roupas', 'Assinaturas', 'Outro']
@@ -61,6 +64,7 @@ function AddTransactionModal({ userId, onClose }: { userId: number; onClose: () 
 export function Finances() {
   const { user } = useAuth()
   const userId = user!.id!
+  const [tab, setTab]                     = useState<FinanceTab>('extrato')
   const [showModal, setShowModal]         = useState(false)
   const [showImport, setShowImport]       = useState(false)
   const [showImportHistory, setShowImportHistory] = useState(false)
@@ -87,19 +91,41 @@ export function Finances() {
           <h1 className="text-2xl font-bold text-[var(--color-ink)]">Finanças</h1>
           <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">{transactions?.length ?? 0} transações registradas</p>
         </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={() => setShowImportHistory(v => !v)} title="Histórico de importações">
-            <History size={15} />
-          </Button>
-          <Button size="sm" variant="ghost" onClick={() => setShowImport(true)}>
-            <Upload size={15} /> Importar
-          </Button>
-          <Button size="sm" onClick={() => setShowModal(true)}>
-            <Plus size={15} /> Nova
-          </Button>
-        </div>
+        {tab === 'extrato' && (
+          <div className="flex gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setShowImportHistory(v => !v)} title="Histórico de importações">
+              <History size={15} />
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowImport(true)}>
+              <Upload size={15} /> Importar
+            </Button>
+            <Button size="sm" onClick={() => setShowModal(true)}>
+              <Plus size={15} /> Nova
+            </Button>
+          </div>
+        )}
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 rounded-[var(--radius-md)] bg-[var(--color-surface-sunken)] self-start">
+        {(['extrato', 'investimentos'] as FinanceTab[]).map(t => (
+          <button
+            key={t}
+            onClick={() => setTab(t)}
+            className={`px-4 py-1.5 rounded-[var(--radius-sm)] text-sm font-semibold transition-all capitalize ${
+              tab === t
+                ? 'bg-[var(--color-surface-elevated)] text-[var(--color-ink)] shadow-sm'
+                : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
+            }`}
+          >
+            {t === 'extrato' ? 'Extrato' : 'Investimentos'}
+          </button>
+        ))}
+      </div>
+
+      {tab === 'investimentos' && <Investments userId={userId} />}
+
+      {tab === 'extrato' && <>
       {/* Import history */}
       {showImportHistory && (
         <Card className="flex flex-col gap-2">
@@ -184,6 +210,7 @@ export function Finances() {
 
       {showModal  && <AddTransactionModal userId={userId} onClose={() => setShowModal(false)} />}
       {showImport && <ImportModal userId={userId} onClose={() => setShowImport(false)} />}
+      </>}
     </div>
   )
 }
