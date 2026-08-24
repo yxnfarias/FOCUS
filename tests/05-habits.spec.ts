@@ -123,17 +123,11 @@ test.describe('Hábitos', () => {
     await page.getByRole('button', { name: /criar hábito/i }).click()
     await expect(page.getByText(habitName)).toBeVisible({ timeout: 8000 })
 
-    // Hover to reveal delete button
-    const habitCard = page.locator('div').filter({ hasText: habitName }).first()
-    await habitCard.hover()
-
-    // Find trash/delete button (last button in the card on hover)
-    const buttons = habitCard.getByRole('button')
-    const count = await buttons.count()
-    if (count > 0) {
-      // The delete button is usually the last button
-      await buttons.last().click()
-    }
+    // The habit name p is a direct child of the card div; navigate up from it
+    // to get the card div (which has the Trash2 delete as its first button)
+    const cardDiv = page.locator('p').filter({ hasText: habitName }).locator('xpath=..')
+    const deleteBtn = cardDiv.getByRole('button').first()
+    await deleteBtn.click()
 
     await expect(page.getByText(habitName)).not.toBeVisible({ timeout: 8000 })
   })
@@ -145,8 +139,8 @@ test.describe('Hábitos', () => {
     await page.getByRole('button', { name: /criar hábito/i }).click()
     await expect(page.getByText(habitName)).toBeVisible({ timeout: 8000 })
 
-    // ContributionGraph renders an SVG or grid of rect elements
-    await expect(page.locator('svg rect').first().or(page.locator('[class*="grid"]').first())).toBeVisible({ timeout: 5000 })
+    // ContributionGraph renders "Histórico de hábitos" header text
+    await expect(page.getByText('Histórico de hábitos')).toBeVisible({ timeout: 5000 })
   })
 
   test('exibe progresso de streak', async ({ page }) => {

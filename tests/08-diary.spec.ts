@@ -142,19 +142,16 @@ test.describe('Diário', () => {
   })
 
   test('fecha painel de edição ao clicar em fechar', async ({ page }) => {
+    // Use mobile viewport so the "← Voltar para entradas" back button (md:hidden) is visible
+    await page.setViewportSize({ width: 375, height: 667 })
     await page.getByRole('button', { name: /nova entrada/i }).click()
     const titleInput = page.getByPlaceholder(/título/i).first()
     await expect(titleInput).toBeVisible({ timeout: 5000 })
 
-    // Find close button (X button in editor panel)
-    const closeBtn = page.getByRole('button', { name: /fechar|close/i })
-    if (await closeBtn.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await closeBtn.click()
-      await expect(titleInput).not.toBeVisible({ timeout: 3000 })
-    } else {
-      // Alternative: look for X icon button
-      const xBtn = page.locator('main button').last()
-      await xBtn.click()
-    }
+    // Mobile back button closes the editor panel
+    const backBtn = page.getByRole('button', { name: /voltar para entradas/i })
+    await expect(backBtn).toBeVisible({ timeout: 3000 })
+    await backBtn.click()
+    await expect(titleInput).not.toBeVisible({ timeout: 3000 })
   })
 })

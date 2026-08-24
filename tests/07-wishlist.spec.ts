@@ -150,7 +150,7 @@ test.describe('Lista de Desejos', () => {
   })
 
   test('exibe filtros de categoria', async ({ page }) => {
-    // The wishlist has category filter buttons
-    await expect(page.getByRole('button', { name: /todos|all/i }).first().or(page.locator('main button').first())).toBeVisible({ timeout: 8000 })
+    // The wishlist has a "Todos" filter button (exact match avoids strict mode issues)
+    await expect(page.getByRole('button', { name: 'Todos', exact: true })).toBeVisible({ timeout: 8000 })
   })
 })
