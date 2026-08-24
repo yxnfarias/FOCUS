@@ -1,6 +1,6 @@
-import { useMemo, useRef, useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
-import { db } from '../../db'
+import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
+import { supabase } from '../../lib/supabase'
+import type { Habit, HabitLog } from '../../db'
 import { useTheme } from '../../hooks/useTheme'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -48,7 +48,7 @@ interface Tip { x: number; y: number; date: string; done: number; total: number 
 
 export function ContributionGraph() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
   const wrapRef = useRef<HTMLDivElement>(null)
   const [tip, setTip] = useState<Tip | null>(null)
   const { theme } = useTheme()
@@ -57,22 +57,27 @@ export function ContributionGraph() {
   const today = toISO(new Date())
   const grid  = useMemo(buildGrid, [])
 
-  const habits = useLiveQuery(() => db.habits.where('userId').equals(userId).toArray(), [userId])
-  const logs   = useLiveQuery(
-    () => db.habitLogs
-      .where('date').aboveOrEqual(grid[0][0])
-      .filter(l => l.userId === userId)
-      .toArray(),
-    [grid[0][0], userId]
-  )
+  const [habits, setHabits] = useState<Pick<Habit, 'id'>[]>([])
+  const [logs, setLogs]     = useState<Pick<HabitLog, 'date' | 'completed'>[]>([])
+
+  const load = useCallback(async () => {
+    const [{ data: habitsData }, { data: logsData }] = await Promise.all([
+      supabase.from('habits').select('id').eq('user_id', userId),
+      supabase.from('habit_logs').select('date,completed').eq('user_id', userId).gte('date', grid[0][0]),
+    ])
+    setHabits((habitsData ?? []) as Pick<Habit, 'id'>[])
+    setLogs((logsData ?? []) as Pick<HabitLog, 'date' | 'completed'>[])
+  }, [userId, grid])
+
+  useEffect(() => { load() }, [load])
 
   const logMap = useMemo(() => {
     const m: Record<string, number> = {}
-    for (const l of logs ?? []) if (l.completed) m[l.date] = (m[l.date] ?? 0) + 1
+    for (const l of logs) if (l.completed) m[l.date] = (m[l.date] ?? 0) + 1
     return m
   }, [logs])
 
-  const total = habits?.length ?? 0
+  const total = habits.length
 
   const monthLabels = useMemo(() => {
     const out: { wi: number; label: string }[] = []

@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { Upload, CheckCircle, AlertCircle, X, Download, TrendingUp, TrendingDown } from 'lucide-react'
-import { db } from '../../db'
+import { supabase } from '../../lib/supabase'
 import { parseExtract, CSV_TEMPLATE, type ParsedTransaction } from '../../lib/extractParser'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -19,7 +19,7 @@ interface DoneResult {
 }
 
 interface Props {
-  userId: number
+  userId: string
   onClose: () => void
 }
 
@@ -42,9 +42,12 @@ export function ImportModal({ userId, onClose }: Props) {
       const parsed  = parseExtract(file.name, content)
 
       // Busca FITIDs já existentes no banco para marcar duplicatas
-      const existingFitids = new Set(
-        (await db.transactions.where('fitid').above('').toArray()).map(t => t.fitid!)
-      )
+      const { data: existingData } = await supabase
+        .from('transactions')
+        .select('fitid')
+        .eq('user_id', userId)
+        .not('fitid', 'is', null)
+      const existingFitids = new Set((existingData ?? []).map((t: { fitid: string }) => t.fitid))
 
       const preview: PreviewRow[] = parsed.map(p => ({
         ...p,
@@ -99,29 +102,30 @@ export function ImportModal({ userId, onClose }: Props) {
 
     const ext = fileName.split('.').pop()?.toUpperCase() as 'OFX' | 'CSV'
 
-    const jobId = await db.importJobs.add({
-      userId,
-      fileName,
-      fileFormat: ext === 'OFX' ? 'OFX' : 'CSV',
+    const { data: jobData } = await supabase.from('import_jobs').insert({
+      user_id: userId,
+      file_name: fileName,
+      file_format: ext === 'OFX' ? 'OFX' : 'CSV',
       status: 'completed',
-      totalRecords: rows.length,
-      importedRecords: 0,
-      duplicatedRecords: dupRows.length,
-      createdAt: now,
-    })
+      total_records: rows.length,
+      imported_records: 0,
+      duplicated_records: dupRows.length,
+      created_at: now,
+    }).select('id').single()
+
+    const jobId = jobData?.id as number
 
     for (const row of newRows) {
       try {
-        await db.transactions.add({
-          userId,
+        await supabase.from('transactions').insert({
+          user_id: userId,
           type: row.type,
           amount: row.amount,
           category: row.category || autoCategory(row.description),
           description: row.description,
           date: row.date,
           fitid: row.fitid,
-          importJobId: jobId as number,
-          createdAt: now,
+          import_job_id: jobId,
         })
         importedCount++
       } catch {
@@ -129,9 +133,9 @@ export function ImportModal({ userId, onClose }: Props) {
       }
     }
 
-    await db.importJobs.update(jobId as number, { importedRecords: importedCount })
+    await supabase.from('import_jobs').update({ imported_records: importedCount }).eq('id', jobId)
 
-    setResult({ imported: importedCount, duplicated: dupRows.length, failed: failedCount, jobId: jobId as number })
+    setResult({ imported: importedCount, duplicated: dupRows.length, failed: failedCount, jobId })
     setStep('done')
     setLoading(false)
   }

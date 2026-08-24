@@ -191,9 +191,6 @@ export function LoginScreen() {
               )}
             </p>
 
-            <p className="mt-8 text-center text-xs text-[var(--color-ink-faint)]">
-              Seus dados ficam armazenados apenas neste dispositivo.
-            </p>
           </div>
         </div>
       </div>

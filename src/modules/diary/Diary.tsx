@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Plus, Trash2, BookOpen, Save } from 'lucide-react'
-import { db, type DiaryEntry } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { DiaryEntry } from '../../db'
 import { useAuth } from '../../contexts/AuthContext'
 
 function formatDate(dateStr: string) {
@@ -19,20 +19,23 @@ function todayISO() {
 
 export function Diary() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
 
-  const entries = useLiveQuery(
-    () => db.diaryEntries.where('userId').equals(userId).toArray()
-      .then(arr => arr.sort((a, b) => b.date.localeCompare(a.date))),
-    [userId]
-  )
-
+  const [entries, setEntries] = useState<DiaryEntry[]>([])
   const [selectedId, setSelectedId] = useState<number | 'new' | null>(null)
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [date, setDate] = useState(todayISO())
   const [saved, setSaved] = useState(false)
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const loadEntries = useCallback(async () => {
+    const { data } = await supabase
+      .from('diary_entries').select('*').eq('user_id', userId).order('date', { ascending: false })
+    setEntries((data ?? []) as DiaryEntry[])
+  }, [userId])
+
+  useEffect(() => { loadEntries() }, [loadEntries])
 
   function openEntry(entry: DiaryEntry) {
     setSelectedId(entry.id!)
@@ -53,23 +56,25 @@ export function Diary() {
   async function save() {
     const now = new Date().toISOString()
     if (selectedId === 'new') {
-      const id = await db.diaryEntries.add({
-        userId, title, content, mood: '', date, createdAt: now, updatedAt: now,
-      })
-      setSelectedId(id as number)
+      const { data } = await supabase.from('diary_entries').insert({
+        user_id: userId, title, content, mood: '', date,
+      }).select('id').single()
+      if (data?.id) setSelectedId(data.id as number)
     } else if (selectedId !== null) {
-      await db.diaryEntries.update(selectedId, { title, content, date, updatedAt: now })
+      await supabase.from('diary_entries').update({ title, content, date, updated_at: now }).eq('id', selectedId)
     }
     setSaved(true)
+    await loadEntries()
   }
 
   async function deleteEntry(id: number) {
-    await db.diaryEntries.delete(id)
+    await supabase.from('diary_entries').delete().eq('id', id)
     if (selectedId === id) {
       setSelectedId(null)
       setTitle('')
       setContent('')
     }
+    await loadEntries()
   }
 
   // Auto-save on content change
@@ -91,7 +96,7 @@ export function Diary() {
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)]">Diário</h1>
           <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">
-            {entries?.length ?? 0} {entries?.length === 1 ? 'entrada' : 'entradas'}
+            {entries.length} {entries.length === 1 ? 'entrada' : 'entradas'}
           </p>
         </div>
         <button
@@ -105,14 +110,14 @@ export function Diary() {
       <div className="flex gap-5 items-start">
         {/* Entry list */}
         <div className={`flex flex-col gap-2 ${hasEditor ? 'hidden md:flex md:w-52 shrink-0' : 'w-full'}`}>
-          {!entries?.length && !hasEditor && (
+          {!entries.length && !hasEditor && (
             <div className="flex flex-col items-center justify-center py-16 gap-3 text-center">
               <BookOpen size={40} className="text-[var(--color-ink-faint)]" />
               <p className="text-[var(--color-ink-subtle)] font-medium">Nenhuma entrada ainda.</p>
               <p className="text-sm text-[var(--color-ink-faint)]">Comece escrevendo sobre o seu dia.</p>
             </div>
           )}
-          {entries?.map(entry => (
+          {entries.map(entry => (
             <button
               key={entry.id}
               onClick={() => openEntry(entry)}

@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, TrendingUp, TrendingDown, DollarSign, Trash2, Upload, History } from 'lucide-react'
-import { db, type Transaction, type ImportJob } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { Transaction, ImportJob } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -15,7 +15,7 @@ type FinanceTab = 'extrato' | 'investimentos'
 const INCOME_CATEGORIES = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outro']
 const EXPENSE_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer', 'Roupas', 'Assinaturas', 'Outro']
 
-function AddTransactionModal({ userId, onClose }: { userId: number; onClose: () => void }) {
+function AddTransactionModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [type, setType]           = useState<'income' | 'expense'>('expense')
   const [amount, setAmount]       = useState('')
   const [category, setCategory]   = useState('')
@@ -27,7 +27,9 @@ function AddTransactionModal({ userId, onClose }: { userId: number; onClose: () 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!amount || !category) return
-    await db.transactions.add({ userId, type, amount: parseFloat(amount), category, description, date, createdAt: new Date().toISOString() })
+    await supabase.from('transactions').insert({
+      user_id: userId, type, amount: parseFloat(amount), category, description, date,
+    })
     onClose()
   }
 
@@ -63,23 +65,50 @@ function AddTransactionModal({ userId, onClose }: { userId: number; onClose: () 
 
 export function Finances() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
   const [tab, setTab]                     = useState<FinanceTab>('extrato')
   const [showModal, setShowModal]         = useState(false)
   const [showImport, setShowImport]       = useState(false)
   const [showImportHistory, setShowImportHistory] = useState(false)
 
-  const transactions = useLiveQuery(() =>
-    db.transactions.where('userId').equals(userId).toArray()
-      .then(arr => arr.sort((a, b) => b.date.localeCompare(a.date))),
-    [userId])
-  const importJobs = useLiveQuery(() =>
-    db.importJobs.where('userId').equals(userId).toArray()
-      .then(j => j.sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
-    [userId])
+  const [transactions, setTransactions] = useState<Transaction[]>([])
+  const [importJobs, setImportJobs]     = useState<ImportJob[]>([])
 
-  const income  = transactions?.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0) ?? 0
-  const expense = transactions?.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0) ?? 0
+  const loadTransactions = useCallback(async () => {
+    const { data } = await supabase
+      .from('transactions').select('*').eq('user_id', userId).order('date', { ascending: false })
+    setTransactions((data ?? []) as Transaction[])
+  }, [userId])
+
+  const loadImportJobs = useCallback(async () => {
+    const { data } = await supabase
+      .from('import_jobs').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    setImportJobs((data ?? []) as ImportJob[])
+  }, [userId])
+
+  useEffect(() => {
+    loadTransactions()
+    loadImportJobs()
+  }, [loadTransactions, loadImportJobs])
+
+  async function deleteTransaction(id: number) {
+    await supabase.from('transactions').delete().eq('id', id)
+    await loadTransactions()
+  }
+
+  async function closeModal() {
+    setShowModal(false)
+    await loadTransactions()
+  }
+
+  async function closeImport() {
+    setShowImport(false)
+    await loadTransactions()
+    await loadImportJobs()
+  }
+
+  const income  = transactions.filter(t => t.type === 'income').reduce((a, t) => a + t.amount, 0)
+  const expense = transactions.filter(t => t.type === 'expense').reduce((a, t) => a + t.amount, 0)
   const balance = income - expense
   const fmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 
@@ -89,7 +118,7 @@ export function Finances() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-2xl font-bold text-[var(--color-ink)]">Finanças</h1>
-          <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">{transactions?.length ?? 0} transações registradas</p>
+          <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">{transactions.length} transações registradas</p>
         </div>
         {tab === 'extrato' && (
           <div className="flex gap-2">
@@ -130,18 +159,18 @@ export function Finances() {
       {showImportHistory && (
         <Card className="flex flex-col gap-2">
           <p className="text-sm font-bold text-[var(--color-ink)]">Histórico de importações</p>
-          {!importJobs?.length && (
+          {!importJobs.length && (
             <p className="text-xs text-[var(--color-ink-subtle)]">Nenhum extrato importado ainda.</p>
           )}
-          {importJobs?.map((job: ImportJob) => (
+          {importJobs.map((job: ImportJob) => (
             <div key={job.id} className="flex items-center gap-3 py-2 border-t border-[var(--color-outline)] first:border-0">
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--color-ink)] truncate">{job.fileName}</p>
+                <p className="text-sm font-medium text-[var(--color-ink)] truncate">{job.file_name}</p>
                 <p className="text-xs text-[var(--color-ink-subtle)]">
-                  {new Date(job.createdAt).toLocaleDateString('pt-BR')} · {job.importedRecords} importadas · {job.duplicatedRecords} duplicadas
+                  {new Date(job.created_at!).toLocaleDateString('pt-BR')} · {job.imported_records} importadas · {job.duplicated_records} duplicadas
                 </p>
               </div>
-              <Badge color="leaf">{job.fileFormat}</Badge>
+              <Badge color="leaf">{job.file_format}</Badge>
             </div>
           ))}
         </Card>
@@ -175,14 +204,14 @@ export function Finances() {
       {/* History */}
       <div className="flex flex-col gap-3">
         <h2 className="text-base font-bold text-[var(--color-ink)]">Histórico</h2>
-        {!transactions?.length && (
+        {!transactions.length && (
           <Card className="flex flex-col items-center justify-center py-12 gap-2">
             <DollarSign size={36} className="text-[var(--color-ink-faint)]" />
             <p className="text-[var(--color-ink-subtle)] font-medium">Nenhuma transação ainda.</p>
             <p className="text-sm text-[var(--color-ink-faint)]">Adicione receitas e gastos para começar.</p>
           </Card>
         )}
-        {transactions?.map((t: Transaction) => (
+        {transactions.map((t: Transaction) => (
           <Card key={t.id} className="flex items-center gap-4">
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
               style={{ background: t.type === 'income' ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)' }}>
@@ -200,7 +229,7 @@ export function Finances() {
             <p className="font-bold text-sm shrink-0" style={{ color: t.type === 'income' ? 'var(--color-leaf-deep)' : 'var(--color-coral)' }}>
               {t.type === 'income' ? '+' : '−'}{fmt(t.amount)}
             </p>
-            <button onClick={() => t.id && db.transactions.delete(t.id)}
+            <button onClick={() => t.id && deleteTransaction(t.id)}
               className="p-1.5 rounded-[var(--radius-sm)] hover:bg-[var(--color-coral-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-coral)] transition-colors shrink-0">
               <Trash2 size={14} />
             </button>
@@ -208,8 +237,8 @@ export function Finances() {
         ))}
       </div>
 
-      {showModal  && <AddTransactionModal userId={userId} onClose={() => setShowModal(false)} />}
-      {showImport && <ImportModal userId={userId} onClose={() => setShowImport(false)} />}
+      {showModal  && <AddTransactionModal userId={userId} onClose={closeModal} />}
+      {showImport && <ImportModal userId={userId} onClose={closeImport} />}
       </>}
     </div>
   )

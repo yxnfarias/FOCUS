@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, Edit2, TrendingUp, TrendingDown, DollarSign, PieChart } from 'lucide-react'
-import { db, type Investment, type InvestmentType } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { Investment, InvestmentType } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -37,7 +37,7 @@ function DonutChart({ slices }: { slices: { label: string; value: number; color:
   )
 }
 
-function AddInvestmentModal({ userId, onClose }: { userId: number; onClose: () => void }) {
+function AddInvestmentModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [ticker, setTicker]       = useState('')
   const [name, setName]           = useState('')
   const [type, setType]           = useState<InvestmentType>('stock')
@@ -48,12 +48,12 @@ function AddInvestmentModal({ userId, onClose }: { userId: number; onClose: () =
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const now = new Date().toISOString()
-    await db.investments.add({
-      userId, ticker: ticker.toUpperCase(), name, type,
+    await supabase.from('investments').insert({
+      user_id: userId, ticker: ticker.toUpperCase(), name, type,
       quantity: parseFloat(quantity),
-      avgPrice: parseFloat(avgPrice),
-      currentPrice: parseFloat(currentPrice || avgPrice),
-      createdAt: now, updatedAt: now,
+      avg_price: parseFloat(avgPrice),
+      current_price: parseFloat(currentPrice || avgPrice),
+      updated_at: now,
     })
     onClose()
   }
@@ -95,37 +95,52 @@ function AddInvestmentModal({ userId, onClose }: { userId: number; onClose: () =
   )
 }
 
-export function Investments({ userId }: { userId: number }) {
+export function Investments({ userId }: { userId: string }) {
   const [showAdd, setShowAdd]     = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [editPrice, setEditPrice] = useState('')
+  const [investments, setInvestments] = useState<Investment[]>([])
 
-  const investments = useLiveQuery(
-    () => db.investments.where('userId').equals(userId).toArray(),
-    [userId]
-  )
+  const loadInvestments = useCallback(async () => {
+    const { data } = await supabase
+      .from('investments').select('*').eq('user_id', userId).order('created_at', { ascending: true })
+    setInvestments((data ?? []) as Investment[])
+  }, [userId])
+
+  useEffect(() => { loadInvestments() }, [loadInvestments])
 
   const fmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
   const pct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`
 
-  const totalInvested = investments?.reduce((s, i) => s + i.quantity * i.avgPrice, 0) ?? 0
-  const totalCurrent  = investments?.reduce((s, i) => s + i.quantity * i.currentPrice, 0) ?? 0
+  const totalInvested = investments.reduce((s, i) => s + i.quantity * i.avg_price, 0)
+  const totalCurrent  = investments.reduce((s, i) => s + i.quantity * i.current_price, 0)
   const totalGain     = totalCurrent - totalInvested
   const totalReturn   = totalInvested ? (totalGain / totalInvested) * 100 : 0
 
   async function updatePrice(id: number) {
     const price = parseFloat(editPrice)
     if (!price) return
-    await db.investments.update(id, { currentPrice: price, updatedAt: new Date().toISOString() })
+    await supabase.from('investments').update({ current_price: price, updated_at: new Date().toISOString() }).eq('id', id)
     setEditingId(null)
     setEditPrice('')
+    await loadInvestments()
+  }
+
+  async function deleteInvestment(id: number) {
+    await supabase.from('investments').delete().eq('id', id)
+    await loadInvestments()
+  }
+
+  async function closeAdd() {
+    setShowAdd(false)
+    await loadInvestments()
   }
 
   // Donut slices grouped by type
   const byType = Object.fromEntries(
     (Object.keys(TYPE_LABELS) as InvestmentType[]).map(t => [t, 0])
   ) as Record<InvestmentType, number>
-  investments?.forEach(i => { byType[i.type] += i.quantity * i.currentPrice })
+  investments.forEach(i => { byType[i.type] += i.quantity * i.current_price })
   const donutSlices = (Object.entries(byType) as [InvestmentType, number][])
     .filter(([, v]) => v > 0)
     .map(([k, v]) => ({ label: TYPE_LABELS[k], value: v, color: TYPE_COLORS[k] }))
@@ -151,7 +166,7 @@ export function Investments({ userId }: { userId: number }) {
       </div>
 
       {/* Charts */}
-      {(investments?.length ?? 0) > 0 && (
+      {investments.length > 0 && (
         <div className="flex gap-4 flex-wrap">
           {/* Donut — allocation */}
           <Card className="flex-1 min-w-[200px] flex flex-col gap-3">
@@ -176,8 +191,8 @@ export function Investments({ userId }: { userId: number }) {
           <Card className="flex-1 min-w-[200px] flex flex-col gap-3">
             <p className="text-sm font-bold text-[var(--color-ink)]">Desempenho por ativo</p>
             <div className="flex flex-col gap-2.5">
-              {investments?.map(inv => {
-                const ret = inv.avgPrice ? ((inv.currentPrice - inv.avgPrice) / inv.avgPrice) * 100 : 0
+              {investments.map(inv => {
+                const ret = inv.avg_price ? ((inv.current_price - inv.avg_price) / inv.avg_price) * 100 : 0
                 const barW = Math.min(Math.abs(ret), 50) / 50 * 100
                 const positive = ret >= 0
                 return (
@@ -206,7 +221,7 @@ export function Investments({ userId }: { userId: number }) {
       </div>
 
       {/* Empty state */}
-      {!investments?.length && (
+      {!investments.length && (
         <Card className="flex flex-col items-center justify-center py-12 gap-2">
           <TrendingUp size={36} className="text-[var(--color-ink-faint)]" />
           <p className="text-[var(--color-ink-subtle)] font-medium">Nenhum investimento ainda.</p>
@@ -215,9 +230,9 @@ export function Investments({ userId }: { userId: number }) {
       )}
 
       {/* Investment cards */}
-      {investments?.map((inv: Investment) => {
-        const gain     = (inv.currentPrice - inv.avgPrice) * inv.quantity
-        const ret      = inv.avgPrice ? ((inv.currentPrice - inv.avgPrice) / inv.avgPrice) * 100 : 0
+      {investments.map((inv: Investment) => {
+        const gain     = (inv.current_price - inv.avg_price) * inv.quantity
+        const ret      = inv.avg_price ? ((inv.current_price - inv.avg_price) / inv.avg_price) * 100 : 0
         const positive = gain >= 0
         const isEditing = editingId === inv.id
 
@@ -237,7 +252,7 @@ export function Investments({ userId }: { userId: number }) {
                   </div>
                   <div>
                     <p className="text-[10px] text-[var(--color-ink-faint)] font-semibold uppercase tracking-wide">Preço médio</p>
-                    <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">{fmt(inv.avgPrice)}</p>
+                    <p className="text-sm font-semibold text-[var(--color-ink)] mt-0.5">{fmt(inv.avg_price)}</p>
                   </div>
                   <div>
                     <p className="text-[10px] text-[var(--color-ink-faint)] font-semibold uppercase tracking-wide">Preço atual</p>
@@ -255,11 +270,11 @@ export function Investments({ userId }: { userId: number }) {
                       </div>
                     ) : (
                       <button
-                        onClick={() => { setEditingId(inv.id!); setEditPrice(String(inv.currentPrice)) }}
+                        onClick={() => { setEditingId(inv.id!); setEditPrice(String(inv.current_price)) }}
                         className="flex items-center gap-1 mt-0.5 group"
                       >
                         <span className="text-sm font-semibold text-[var(--color-ink)] group-hover:text-[var(--color-sky)] transition-colors">
-                          {fmt(inv.currentPrice)}
+                          {fmt(inv.current_price)}
                         </span>
                         <Edit2 size={10} className="text-[var(--color-ink-faint)] opacity-0 group-hover:opacity-100 transition-opacity" />
                       </button>
@@ -275,7 +290,7 @@ export function Investments({ userId }: { userId: number }) {
                   {pct(ret)}
                 </p>
                 <button
-                  onClick={() => inv.id && db.investments.delete(inv.id)}
+                  onClick={() => inv.id && deleteInvestment(inv.id)}
                   className="mt-1 p-1 rounded-[var(--radius-sm)] hover:bg-[var(--color-coral-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-coral)] transition-colors"
                 >
                   <Trash2 size={13} />
@@ -283,14 +298,14 @@ export function Investments({ userId }: { userId: number }) {
               </div>
             </div>
             <div className="flex items-center justify-between pt-2 border-t border-[var(--color-outline)] text-xs text-[var(--color-ink-faint)]">
-              <span>Total: <span className="font-semibold text-[var(--color-ink)]">{fmt(inv.quantity * inv.currentPrice)}</span></span>
-              <span>Atualizado em {new Date(inv.updatedAt).toLocaleDateString('pt-BR')}</span>
+              <span>Total: <span className="font-semibold text-[var(--color-ink)]">{fmt(inv.quantity * inv.current_price)}</span></span>
+              <span>Atualizado em {new Date(inv.updated_at!).toLocaleDateString('pt-BR')}</span>
             </div>
           </Card>
         )
       })}
 
-      {showAdd && <AddInvestmentModal userId={userId} onClose={() => setShowAdd(false)} />}
+      {showAdd && <AddInvestmentModal userId={userId} onClose={closeAdd} />}
     </div>
   )
 }

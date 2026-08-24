@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Flame, Trash2, Target, Check } from 'lucide-react'
-import { db, type Habit } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { Habit, HabitLog } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
@@ -11,7 +11,7 @@ import { useAuth } from '../../contexts/AuthContext'
 const COLORS = ['#3B82F6', '#22C55E', '#FBBF24', '#F87171', '#A855F7', '#F97316']
 const ICONS  = ['🏃', '📚', '💧', '🧘', '🍎', '💪', '🎯', '🛌', '✍️', '🧹']
 
-function AddHabitModal({ userId, onClose }: { userId: number; onClose: () => void }) {
+function AddHabitModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [name, setName]               = useState('')
   const [description, setDescription] = useState('')
   const [color, setColor]             = useState(COLORS[0])
@@ -21,10 +21,10 @@ function AddHabitModal({ userId, onClose }: { userId: number; onClose: () => voi
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    await db.habits.add({
-      userId,
+    await supabase.from('habits').insert({
+      user_id: userId,
       name: name.trim(), description, color, icon, frequency,
-      targetDays: [0,1,2,3,4,5,6], streak: 0, createdAt: new Date().toISOString(),
+      target_days: [0,1,2,3,4,5,6], streak: 0,
     })
     onClose()
   }
@@ -73,35 +73,57 @@ function AddHabitModal({ userId, onClose }: { userId: number; onClose: () => voi
 
 export function Habits() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
   const [showModal, setShowModal] = useState(false)
   const today = new Date().toISOString().split('T')[0]
 
-  const habits = useLiveQuery(() => db.habits.where('userId').equals(userId).toArray(), [userId])
-  const logs   = useLiveQuery(() =>
-    db.habitLogs.where('date').equals(today).filter(l => l.userId === userId).toArray(), [today, userId])
+  const [habits, setHabits] = useState<Habit[]>([])
+  const [logs, setLogs]     = useState<HabitLog[]>([])
 
-  const completedIds = new Set(logs?.filter(l => l.completed).map(l => l.habitId))
+  const loadHabits = useCallback(async () => {
+    const { data } = await supabase
+      .from('habits').select('*').eq('user_id', userId).order('created_at', { ascending: true })
+    setHabits((data ?? []) as Habit[])
+  }, [userId])
+
+  const loadLogs = useCallback(async () => {
+    const { data } = await supabase
+      .from('habit_logs').select('*').eq('user_id', userId).eq('date', today)
+    setLogs((data ?? []) as HabitLog[])
+  }, [userId, today])
+
+  useEffect(() => {
+    loadHabits()
+    loadLogs()
+  }, [loadHabits, loadLogs])
+
+  const completedIds = new Set(logs.filter(l => l.completed).map(l => l.habit_id))
 
   async function toggleHabit(habit: Habit) {
     if (!habit.id) return
     const isCompleted = completedIds.has(habit.id)
-    const existing    = logs?.find(l => l.habitId === habit.id)
-    if (existing?.id) {
-      await db.habitLogs.update(existing.id, { completed: !isCompleted })
-    } else {
-      await db.habitLogs.add({ userId, habitId: habit.id, date: today, completed: true })
-    }
+    await supabase.from('habit_logs').upsert(
+      { user_id: userId, habit_id: habit.id, date: today, completed: !isCompleted },
+      { onConflict: 'habit_id,date' }
+    )
     const newStreak = isCompleted ? Math.max(0, habit.streak - 1) : habit.streak + 1
-    await db.habits.update(habit.id, { streak: newStreak })
+    await supabase.from('habits').update({ streak: newStreak }).eq('id', habit.id)
+    await loadLogs()
+    await loadHabits()
   }
 
   async function deleteHabit(id: number) {
-    await db.habits.delete(id)
-    await db.habitLogs.where('habitId').equals(id).delete()
+    await supabase.from('habits').delete().eq('id', id)
+    await loadHabits()
+    await loadLogs()
   }
 
-  const total = habits?.length ?? 0
+  async function closeModal() {
+    setShowModal(false)
+    await loadHabits()
+  }
+
+  const total = habits.length
   const done  = completedIds.size
   const pct   = total > 0 ? Math.round((done / total) * 100) : 0
 
@@ -150,7 +172,7 @@ export function Habits() {
       )}
 
       {/* Habit cards */}
-      {habits?.length === 0 ? (
+      {habits.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-14 gap-3">
           <Target size={40} className="text-[var(--color-ink-faint)]" />
           <p className="text-[var(--color-ink-subtle)] font-medium">Nenhum hábito cadastrado.</p>
@@ -158,7 +180,7 @@ export function Habits() {
         </Card>
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {habits?.map((habit: Habit) => {
+          {habits.map((habit: Habit) => {
             const isCompleted = completedIds.has(habit.id!)
             return (
               <div
@@ -230,7 +252,7 @@ export function Habits() {
         </div>
       )}
 
-      {showModal && <AddHabitModal userId={userId} onClose={() => setShowModal(false)} />}
+      {showModal && <AddHabitModal userId={userId} onClose={closeModal} />}
     </div>
   )
 }

@@ -1,7 +1,7 @@
-import { useState } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useCallback } from 'react'
 import { Plus, Trash2, GripVertical } from 'lucide-react'
-import { db, type Task } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { Task } from '../../db'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
 import { Input, Select } from '../../components/ui/Input'
@@ -25,7 +25,7 @@ const columns: {
   { id: 'done',        label: 'Concluído',    dot: 'var(--color-leaf)',       accent: 'var(--color-leaf-deep)', bg: 'var(--color-leaf-soft)',      bgHover: 'var(--color-kanban-leaf-hover)' },
 ]
 
-function AddTaskModal({ defaultStatus, userId, onClose }: { defaultStatus: Status; userId: number; onClose: () => void }) {
+function AddTaskModal({ userId, defaultStatus, onClose }: { userId: string; defaultStatus: Status; onClose: () => void }) {
   const [title, setTitle]             = useState('')
   const [description, setDescription] = useState('')
   const [priority, setPriority]       = useState<Priority>('medium')
@@ -34,11 +34,10 @@ function AddTaskModal({ defaultStatus, userId, onClose }: { defaultStatus: Statu
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    await db.tasks.add({
-      userId,
+    await supabase.from('tasks').insert({
+      user_id: userId,
       title: title.trim(), description, priority,
-      dueDate: dueDate || undefined, status: defaultStatus,
-      createdAt: new Date().toISOString(),
+      due_date: dueDate || null, status: defaultStatus,
     })
     onClose()
   }
@@ -70,9 +69,10 @@ interface TaskCardProps {
   task: Task
   isDragging: boolean
   onDragStart: (id: number) => void
+  onDelete: (id: number) => void
 }
 
-function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
+function TaskCard({ task, isDragging, onDragStart, onDelete }: TaskCardProps) {
   const p      = priorityConfig[task.priority]
   const isDone = task.status === 'done'
 
@@ -81,7 +81,6 @@ function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
       draggable
       onDragStart={e => {
         if (!task.id) return
-        // Set transparent ghost so our CSS state is the only visual
         const ghost = document.createElement('div')
         ghost.style.cssText = 'position:absolute;top:-9999px;width:1px;height:1px;'
         document.body.appendChild(ghost)
@@ -106,7 +105,7 @@ function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
           {task.title}
         </p>
         <button
-          onClick={e => { e.stopPropagation(); task.id && db.tasks.delete(task.id) }}
+          onClick={e => { e.stopPropagation(); task.id && onDelete(task.id) }}
           className="p-0.5 rounded opacity-0 group-hover:opacity-100 text-[var(--color-ink-faint)] hover:text-[var(--color-coral)] transition-all shrink-0"
         >
           <Trash2 size={12} />
@@ -119,9 +118,9 @@ function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
 
       <div className="flex items-center gap-1.5 flex-wrap pl-5">
         <Badge color={p.color}>{p.label}</Badge>
-        {task.dueDate && (
+        {task.due_date && (
           <span className="text-xs text-[var(--color-ink-subtle)]">
-            📅 {new Date(task.dueDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+            📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
           </span>
         )}
       </div>
@@ -131,28 +130,46 @@ function TaskCard({ task, isDragging, onDragStart }: TaskCardProps) {
 
 export function Tasks() {
   const { user } = useAuth()
-  const userId = user!.id!
-  const [addTo, setAddTo]   = useState<Status | null>(null)
-  const [dragId, setDragId] = useState<number | null>(null)
+  const userId = user!.id
+  const [addTo, setAddTo]     = useState<Status | null>(null)
+  const [dragId, setDragId]   = useState<number | null>(null)
   const [overCol, setOverCol] = useState<Status | null>(null)
+  const [tasks, setTasks]     = useState<Task[]>([])
 
-  const tasks = useLiveQuery(() =>
-    db.tasks.where('userId').equals(userId).toArray()
-      .then(all => all.sort((a, b) => a.createdAt.localeCompare(b.createdAt))),
-    [userId])
+  const loadTasks = useCallback(async () => {
+    const { data } = await supabase
+      .from('tasks')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    setTasks((data ?? []) as Task[])
+  }, [userId])
 
-  const byStatus = (s: Status) => tasks?.filter(t => t.status === s) ?? []
+  useEffect(() => { loadTasks() }, [loadTasks])
+
+  const byStatus = (s: Status) => tasks.filter(t => t.status === s)
+
+  async function deleteTask(id: number) {
+    await supabase.from('tasks').delete().eq('id', id)
+    await loadTasks()
+  }
 
   async function onDrop(status: Status) {
     if (dragId !== null) {
-      await db.tasks.update(dragId, { status })
+      await supabase.from('tasks').update({ status }).eq('id', dragId)
       setDragId(null)
       setOverCol(null)
+      await loadTasks()
     }
   }
 
-  const total = tasks?.length ?? 0
-  const done  = tasks?.filter(t => t.status === 'done').length ?? 0
+  async function closeModal() {
+    setAddTo(null)
+    await loadTasks()
+  }
+
+  const total = tasks.length
+  const done  = tasks.filter(t => t.status === 'done').length
 
   return (
     <div className="flex flex-col gap-5 pb-20 md:pb-0">
@@ -188,7 +205,6 @@ export function Tasks() {
               key={col.id}
               onDragOver={e => { e.preventDefault(); if (dragId !== null) setOverCol(col.id) }}
               onDragLeave={e => {
-                // Only clear if leaving the column entirely (not entering a child)
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) setOverCol(null)
               }}
               onDrop={() => onDrop(col.id)}
@@ -217,7 +233,6 @@ export function Tasks() {
                 <button
                   onClick={() => setAddTo(col.id)}
                   className="p-1 rounded-[var(--radius-sm)] text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
-                  style={{ ['--tw-hover-bg' as string]: 'var(--color-card-btn-hover)' }}
                   onMouseEnter={e => (e.currentTarget.style.background = 'var(--color-card-btn-hover)')}
                   onMouseLeave={e => (e.currentTarget.style.background = '')}
                   title={`Adicionar em ${col.label}`}
@@ -242,6 +257,7 @@ export function Tasks() {
                     task={task}
                     isDragging={dragId === task.id}
                     onDragStart={setDragId}
+                    onDelete={deleteTask}
                   />
                 ))}
               </div>
@@ -259,7 +275,7 @@ export function Tasks() {
         })}
       </div>
 
-      {addTo && <AddTaskModal defaultStatus={addTo} userId={userId} onClose={() => setAddTo(null)} />}
+      {addTo && <AddTaskModal defaultStatus={addTo} userId={userId} onClose={closeModal} />}
     </div>
   )
 }
