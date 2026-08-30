@@ -10,7 +10,7 @@ function anim(name: string, dur: string, delay = '0ms'): React.CSSProperties {
   return { animation: `${name} ${dur} ${EASE} ${delay} both` }
 }
 
-const CYCLER_WORDS = ['finanças', 'hábitos', 'tarefas', 'finanças']
+const CYCLER_WORDS = ['suas finanças', 'seus hábitos', 'seus compromissos', 'sua vida!', 'suas finanças']
 
 export function LoginScreen() {
   const { login, register } = useAuth()
@@ -127,14 +127,14 @@ export function LoginScreen() {
               className="text-[19px]"
               style={{ color: '#94a3b8', ...anim('fadeIn', '800ms', '700ms') }}
             >
-              Gerencie suas{' '}
+              Gerencie{' '}
               <span
                 className="inline-block align-bottom overflow-hidden font-bold"
                 style={{ height: '1.35em' }}
               >
                 <span
                   className="flex flex-col"
-                  style={{ animation: 'cycle 9s cubic-bezier(.4,0,.2,1) infinite' }}
+                  style={{ animation: 'cycle 12s cubic-bezier(.4,0,.2,1) infinite' }}
                 >
                   {CYCLER_WORDS.map((w, i) => (
                     <span
@@ -150,20 +150,6 @@ export function LoginScreen() {
             </p>
           </div>
 
-          {/* Footer mono */}
-          <p
-            className="relative z-10"
-            style={{
-              color: '#475569',
-              fontFamily: "'IBM Plex Mono', monospace",
-              fontSize: '11px',
-              letterSpacing: '0.06em',
-              textTransform: 'uppercase',
-              ...anim('fadeIn', '800ms', '900ms'),
-            }}
-          >
-            Organização Pessoal
-          </p>
         </section>
 
         {/* ── Right panel: form ── */}
@@ -176,17 +162,6 @@ export function LoginScreen() {
           >
             {theme === 'dark' ? <Sun size={17} /> : <Moon size={17} />}
           </button>
-
-          {/* Mobile wordmark (visible only below md) */}
-          <div className="absolute top-6 left-6 flex items-center gap-2 md:hidden">
-            <div
-              className="w-8 h-8 flex items-center justify-center shrink-0"
-              style={{ background: 'var(--color-sky)', borderRadius: '8px' }}
-            >
-              <span className="text-white font-black text-sm">f</span>
-            </div>
-            <span className="font-bold text-[var(--color-ink)]">focus</span>
-          </div>
 
           <div className="w-full max-w-[372px]">
             {/* H2 + subtext */}
@@ -204,7 +179,7 @@ export function LoginScreen() {
               </p>
             </div>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+            <form key={mode} onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
               {/* Name — signup only */}
               {!isLogin && (
                 <div className="flex flex-col gap-1.5" style={anim('riseIn', '500ms', '200ms')}>
