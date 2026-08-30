@@ -15,6 +15,22 @@ type FinanceTab = 'extrato' | 'investimentos'
 const INCOME_CATEGORIES = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outro']
 const EXPENSE_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer', 'Roupas', 'Assinaturas', 'Outro']
 
+const CATEGORY_ICONS: Record<string, string> = {
+  'Alimentação':   '🍽️',
+  'Transporte':    '🚗',
+  'Moradia':       '🏠',
+  'Saúde':         '💊',
+  'Educação':      '📚',
+  'Lazer':         '🎮',
+  'Roupas':        '👕',
+  'Assinaturas':   '📱',
+  'Salário':       '💰',
+  'Freelance':     '💻',
+  'Investimentos': '📈',
+  'Presente':      '🎁',
+  'Outro':         '📦',
+}
+
 function AddTransactionModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [type, setType]           = useState<'income' | 'expense'>('expense')
   const [amount, setAmount]       = useState('')
@@ -74,6 +90,7 @@ export function Finances() {
   const [transactions, setTransactions]   = useState<Transaction[]>([])
   const [importJobs, setImportJobs]       = useState<ImportJob[]>([])
   const [activeFilter, setActiveFilter]   = useState<'all' | 'income' | 'expense'>('all')
+  const [activeCategory, setActiveCategory] = useState<string | null>(null)
 
   const loadTransactions = useCallback(async () => {
     const { data } = await supabase
@@ -181,7 +198,7 @@ export function Finances() {
       <div className="grid grid-cols-3 gap-3">
         <Card
           className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
-          onClick={() => setActiveFilter(f => f === 'income' ? 'all' : 'income')}
+          onClick={() => { setActiveCategory(null); setActiveFilter(f => f === 'income' ? 'all' : 'income') }}
           style={{ boxShadow: activeFilter === 'income' ? '0 0 0 2px var(--color-leaf)' : undefined }}
         >
           <div className="p-2 rounded-full bg-[var(--color-leaf-soft)]">
@@ -192,7 +209,7 @@ export function Finances() {
         </Card>
         <Card
           className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
-          onClick={() => setActiveFilter(f => f === 'expense' ? 'all' : 'expense')}
+          onClick={() => { setActiveCategory(null); setActiveFilter(f => f === 'expense' ? 'all' : 'expense') }}
           style={{ boxShadow: activeFilter === 'expense' ? '0 0 0 2px var(--color-coral)' : undefined }}
         >
           <div className="p-2 rounded-full bg-[var(--color-coral-soft)]">
@@ -203,7 +220,7 @@ export function Finances() {
         </Card>
         <Card
           className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
-          onClick={() => setActiveFilter('all')}
+          onClick={() => { setActiveCategory(null); setActiveFilter('all') }}
           style={{
             borderColor: balance >= 0 ? 'var(--color-outline)' : 'var(--color-coral)',
             boxShadow: activeFilter === 'all' ? '0 0 0 2px var(--color-sky)' : undefined,
@@ -217,13 +234,48 @@ export function Finances() {
         </Card>
       </div>
 
+      {/* Category filter chips */}
+      {transactions.length > 0 && (() => {
+        const visibleCats = [...new Set(
+          (activeFilter === 'all' ? transactions : transactions.filter(t => t.type === activeFilter))
+            .map(t => t.category)
+        )].sort()
+        const accentActive = activeFilter === 'income' ? 'var(--color-leaf)' : activeFilter === 'expense' ? 'var(--color-coral)' : 'var(--color-sky)'
+        const bgActive = activeFilter === 'income' ? 'var(--color-leaf-soft)' : activeFilter === 'expense' ? 'var(--color-coral-soft)' : 'var(--color-sky-soft)'
+
+        return (
+          <div className="grid grid-cols-5 gap-2">
+            {visibleCats.map(cat => {
+              const isActive = activeCategory === cat
+              return (
+                <button
+                  key={cat}
+                  onClick={() => setActiveCategory(c => c === cat ? null : cat)}
+                  className="flex flex-col items-center justify-center gap-1 aspect-square rounded-[var(--radius-md)] border text-center transition-all duration-150 p-1.5"
+                  style={{
+                    background: isActive ? bgActive : 'var(--color-surface-elevated)',
+                    borderColor: isActive ? accentActive : 'var(--color-outline)',
+                    boxShadow: isActive ? `0 0 0 1.5px ${accentActive}` : undefined,
+                  }}
+                >
+                  <span className="text-lg leading-none">{CATEGORY_ICONS[cat] ?? '🏷️'}</span>
+                  <span className="text-[10px] font-semibold text-[var(--color-ink-muted)] leading-tight truncate w-full text-center">{cat}</span>
+                </button>
+              )
+            })}
+          </div>
+        )
+      })()}
+
       {/* History */}
       {(() => {
-        const filtered = activeFilter === 'all'
-          ? transactions
-          : transactions.filter(t => t.type === activeFilter)
+        const filtered = transactions
+          .filter(t => activeFilter === 'all' || t.type === activeFilter)
+          .filter(t => !activeCategory || t.category === activeCategory)
 
-        const filterLabel = activeFilter === 'income' ? 'Receitas' : activeFilter === 'expense' ? 'Gastos' : null
+        const filterLabel = activeCategory
+          ? activeCategory
+          : activeFilter === 'income' ? 'Receitas' : activeFilter === 'expense' ? 'Gastos' : null
 
         const TransactionRow = ({ t }: { t: Transaction }) => (
           <Card className="flex items-center gap-4">
