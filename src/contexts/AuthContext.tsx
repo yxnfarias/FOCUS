@@ -75,6 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (msg.includes('already registered') || msg.includes('already been registered')) {
         throw new Error('Este e-mail já está cadastrado.')
       }
+      if (msg.includes('database error saving new user')) {
+        throw new Error('Erro ao criar conta. Tente novamente em instantes.')
+      }
       throw new Error(error.message)
     }
   }
