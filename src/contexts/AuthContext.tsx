@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function register(name: string, email: string, password: string) {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { name } },
@@ -79,6 +79,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw new Error('Erro ao criar conta. Tente novamente em instantes.')
       }
       throw new Error(error.message)
+    }
+    if (!data.session) {
+      throw new Error('Verifique seu e-mail para confirmar o cadastro.')
     }
   }
 
