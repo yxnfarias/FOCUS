@@ -33,6 +33,13 @@
   100% { transform: scale(1) }
 }
 
+/* Scrollbar — design system */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-outline-strong); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-ink-subtle); }
+* { scrollbar-width: thin; scrollbar-color: var(--color-outline-strong) transparent; }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: .01ms !important;

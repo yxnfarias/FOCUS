@@ -101,7 +101,7 @@ function TaskCard({ task, isDragging, onDragStart, onDelete }: TaskCardProps) {
     >
       <div className="flex items-start gap-2">
         <GripVertical size={14} className="text-[var(--color-ink-faint)] mt-0.5 shrink-0 group-hover:text-[var(--color-ink-subtle)]" />
-        <p className={`text-sm font-semibold flex-1 leading-snug ${isDone ? 'line-through text-[var(--color-ink-subtle)]' : 'text-[var(--color-ink)]'}`}>
+        <p className={`text-sm font-semibold flex-1 leading-snug ${isDone ? 'line-through text-[var(--color-ink-muted)]' : 'text-[var(--color-ink)]'}`}>
           {task.title}
         </p>
         <button
@@ -113,13 +113,13 @@ function TaskCard({ task, isDragging, onDragStart, onDelete }: TaskCardProps) {
       </div>
 
       {task.description && (
-        <p className="text-xs text-[var(--color-ink-subtle)] pl-5 leading-relaxed">{task.description}</p>
+        <p className="text-xs text-[var(--color-ink-muted)] pl-5 leading-relaxed">{task.description}</p>
       )}
 
       <div className="flex items-center gap-1.5 flex-wrap pl-5">
         <Badge color={p.color}>{p.label}</Badge>
         {task.due_date && (
-          <span className="text-xs text-[var(--color-ink-subtle)]">
+          <span className="text-xs text-[var(--color-ink-muted)]">
             📅 {new Date(task.due_date + 'T00:00:00').toLocaleDateString('pt-BR')}
           </span>
         )}
