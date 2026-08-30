@@ -234,32 +234,46 @@ export function Finances() {
         </Card>
       </div>
 
-      {/* Category filter chips */}
+      {/* Category chart */}
       {transactions.length > 0 && (() => {
-        const visibleCats = [...new Set(
-          (activeFilter === 'all' ? transactions : transactions.filter(t => t.type === activeFilter))
-            .map(t => t.category)
-        )].sort()
-        const accentActive = activeFilter === 'income' ? 'var(--color-leaf)' : activeFilter === 'expense' ? 'var(--color-coral)' : 'var(--color-sky)'
-        const bgActive = activeFilter === 'income' ? 'var(--color-leaf-soft)' : activeFilter === 'expense' ? 'var(--color-coral-soft)' : 'var(--color-sky-soft)'
+        const typeTxs = activeFilter === 'all' ? transactions : transactions.filter(t => t.type === activeFilter)
+        const catMap = typeTxs.reduce((acc, t) => {
+          acc[t.category] = (acc[t.category] ?? 0) + t.amount
+          return acc
+        }, {} as Record<string, number>)
+        const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1])
+        if (!cats.length) return null
+        const maxVal = cats[0][1]
+        const accent = activeFilter === 'income' ? 'var(--color-leaf)' : activeFilter === 'expense' ? 'var(--color-coral)' : 'var(--color-sky)'
+        const accentSoft = activeFilter === 'income' ? 'var(--color-leaf-soft)' : activeFilter === 'expense' ? 'var(--color-coral-soft)' : 'var(--color-sky-soft)'
 
         return (
-          <div className="grid grid-cols-5 gap-2">
-            {visibleCats.map(cat => {
+          <div className="flex flex-col gap-1.5">
+            <p className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wide mb-0.5">Por categoria</p>
+            {cats.map(([cat, total]) => {
               const isActive = activeCategory === cat
+              const pct = (total / maxVal) * 100
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(c => c === cat ? null : cat)}
-                  className="flex flex-col items-center justify-center gap-1 aspect-square rounded-[var(--radius-md)] border text-center transition-all duration-150 p-1.5"
+                  className="flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] border transition-all duration-150 text-left w-full"
                   style={{
-                    background: isActive ? bgActive : 'var(--color-surface-elevated)',
-                    borderColor: isActive ? accentActive : 'var(--color-outline)',
-                    boxShadow: isActive ? `0 0 0 1.5px ${accentActive}` : undefined,
+                    background: isActive ? accentSoft : 'var(--color-surface-elevated)',
+                    borderColor: isActive ? accent : 'var(--color-outline)',
+                    boxShadow: isActive ? `0 0 0 1.5px ${accent}` : undefined,
                   }}
                 >
-                  <span className="text-lg leading-none">{CATEGORY_ICONS[cat] ?? '🏷️'}</span>
-                  <span className="text-[10px] font-semibold text-[var(--color-ink-muted)] leading-tight truncate w-full text-center">{cat}</span>
+                  <span className="text-base leading-none shrink-0">{CATEGORY_ICONS[cat] ?? '🏷️'}</span>
+                  <div className="flex-1 min-w-0 flex flex-col gap-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-semibold text-[var(--color-ink-muted)] truncate">{cat}</span>
+                      <span className="text-xs font-bold shrink-0" style={{ color: accent }}>{fmt(total)}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-[var(--color-surface-sunken)] overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+                    </div>
+                  </div>
                 </button>
               )
             })}
