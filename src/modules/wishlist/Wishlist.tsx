@@ -1,7 +1,7 @@
-import { useState, useRef } from 'react'
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { Plus, Star, Check, Trash2, ShoppingBag, Compass, Trophy, Flag, ImagePlus, X } from 'lucide-react'
-import { db, type WishItem } from '../../db'
+import { supabase } from '../../lib/supabase'
+import type { WishItem } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Badge } from '../../components/ui/Badge'
@@ -24,7 +24,7 @@ const priorityConfig: Record<Priority, { label: string; color: 'leaf' | 'sun' | 
   high:   { label: 'Alta',  color: 'coral' },
 }
 
-function AddWishModal({ userId, onClose }: { userId: number; onClose: () => void }) {
+function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void }) {
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [category, setCategory] = useState<Category>('purchase')
@@ -45,17 +45,16 @@ function AddWishModal({ userId, onClose }: { userId: number; onClose: () => void
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    await db.wishItems.add({
-      userId,
+    await supabase.from('wish_items').insert({
+      user_id: userId,
       title: title.trim(),
       description,
       category,
       priority,
-      price: price ? parseFloat(price) : undefined,
-      targetDate: targetDate || undefined,
+      price: price ? parseFloat(price) : null,
+      target_date: targetDate || null,
       completed: false,
-      imageUrl,
-      createdAt: new Date().toISOString(),
+      image_url: imageUrl ?? null,
     })
     onClose()
   }
@@ -142,10 +141,10 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
       className={`flex flex-col overflow-hidden rounded-[var(--radius-xl)] border border-[var(--color-outline)] bg-[var(--color-surface-elevated)] shadow-md p-3 gap-0 transition-opacity ${item.completed ? 'opacity-55' : ''}`}
     >
       {/* Cover image or placeholder */}
-      {item.imageUrl ? (
+      {item.image_url ? (
         <div className="relative h-36 w-full mb-2">
           <img
-            src={item.imageUrl}
+            src={item.image_url}
             alt={item.title}
             className="w-full h-full object-cover rounded-[var(--radius-lg)]"
           />
@@ -200,24 +199,24 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
       {/* Footer */}
       <div className="flex items-end justify-between px-1 pt-3 mt-auto">
         <div className="flex flex-col gap-0.5">
-          {item.price !== undefined && (
+          {item.price !== undefined && item.price !== null && (
             <>
               <p className="text-xs text-[var(--color-ink-subtle)]">Valor estimado</p>
               <p className="text-sm font-bold text-[var(--color-ink)]">
-                R$ {item.price.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                R$ {item.price!.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
               </p>
             </>
           )}
-          {item.targetDate && (
+          {item.target_date && (
             <>
-              <p className="text-xs text-[var(--color-ink-subtle)]">{item.price !== undefined ? '' : 'Meta para'}
+              <p className="text-xs text-[var(--color-ink-subtle)]">{item.price !== undefined && item.price !== null ? '' : 'Meta para'}
               </p>
               <p className="text-sm font-semibold text-[var(--color-ink-muted)]">
-                📅 {new Date(item.targetDate + 'T00:00:00').toLocaleDateString('pt-BR')}
+                📅 {new Date(item.target_date + 'T00:00:00').toLocaleDateString('pt-BR')}
               </p>
             </>
           )}
-          {!item.price && !item.targetDate && (
+          {!item.price && !item.target_date && (
             <span />
           )}
         </div>
@@ -248,28 +247,38 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
 
 export function Wishlist() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
   const [showModal, setShowModal] = useState(false)
   const [filter, setFilter] = useState<Category | 'all'>('all')
+  const [items, setItems] = useState<WishItem[]>([])
 
-  const items = useLiveQuery(() =>
-    db.wishItems.where('userId').equals(userId).toArray()
-      .then(arr => arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt))),
-    [userId])
+  const loadItems = useCallback(async () => {
+    const { data } = await supabase
+      .from('wish_items').select('*').eq('user_id', userId).order('created_at', { ascending: false })
+    setItems((data ?? []) as WishItem[])
+  }, [userId])
+
+  useEffect(() => { loadItems() }, [loadItems])
 
   async function toggleComplete(item: WishItem) {
     if (!item.id) return
-    await db.wishItems.update(item.id, { completed: !item.completed })
+    await supabase.from('wish_items').update({ completed: !item.completed }).eq('id', item.id)
+    await loadItems()
   }
 
   async function deleteItem(id: number) {
-    await db.wishItems.delete(id)
+    await supabase.from('wish_items').delete().eq('id', id)
+    await loadItems()
   }
 
-  const allItems = items ?? []
-  const filtered = filter === 'all' ? allItems : allItems.filter(i => i.category === filter)
-  const completedCount = allItems.filter(i => i.completed).length
-  const totalCount = allItems.length
+  async function closeModal() {
+    setShowModal(false)
+    await loadItems()
+  }
+
+  const filtered = filter === 'all' ? items : items.filter(i => i.category === filter)
+  const completedCount = items.filter(i => i.completed).length
+  const totalCount = items.length
 
   const filterOptions: { value: Category | 'all'; label: string }[] = [
     { value: 'all',        label: 'Todos'        },
@@ -347,7 +356,7 @@ export function Wishlist() {
         </div>
       )}
 
-      {showModal && <AddWishModal userId={userId} onClose={() => setShowModal(false)} />}
+      {showModal && <AddWishModal userId={userId} onClose={closeModal} />}
     </div>
   )
 }

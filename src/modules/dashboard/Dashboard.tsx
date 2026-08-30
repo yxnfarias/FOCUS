@@ -1,7 +1,7 @@
-import { useLiveQuery } from 'dexie-react-hooks'
+import { useState, useEffect, useCallback } from 'react'
 import { Wallet, Target, CheckSquare, Star, TrendingUp, Flame } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { db } from '../../db'
+import { supabase } from '../../lib/supabase'
 import { Card } from '../../components/ui/Card'
 import { useAuth } from '../../contexts/AuthContext'
 
@@ -18,24 +18,45 @@ function firstName(name: string) {
 
 export function Dashboard() {
   const { user } = useAuth()
-  const userId = user!.id!
+  const userId = user!.id
   const today = new Date().toISOString().split('T')[0]
 
-  const transactions = useLiveQuery(() => db.transactions.where('userId').equals(userId).toArray(), [userId])
-  const habits       = useLiveQuery(() => db.habits.where('userId').equals(userId).toArray(), [userId])
-  const habitLogs    = useLiveQuery(() =>
-    db.habitLogs.where('date').equals(today).filter(l => l.userId === userId).toArray(), [today, userId])
-  const tasks        = useLiveQuery(() =>
-    db.tasks.where('userId').equals(userId).toArray().then(all => all.filter(t => t.status !== 'done')), [userId])
-  const wishes       = useLiveQuery(() =>
-    db.wishItems.where('userId').equals(userId).toArray().then(all => all.filter(i => !i.completed)), [userId])
+  const [balance, setBalance]           = useState(0)
+  const [completedToday, setCompletedToday] = useState(0)
+  const [totalHabits, setTotalHabits]   = useState(0)
+  const [pendingTasks, setPendingTasks] = useState(0)
+  const [pendingWishes, setPendingWishes] = useState(0)
+  const [topStreak, setTopStreak]       = useState(0)
 
-  const balance        = transactions?.reduce((acc, t) => t.type === 'income' ? acc + t.amount : acc - t.amount, 0) ?? 0
-  const completedToday = habitLogs?.length ?? 0
-  const totalHabits    = habits?.length ?? 0
-  const pendingTasks   = tasks?.length ?? 0
-  const pendingWishes  = wishes?.length ?? 0
-  const topStreak      = habits?.reduce((max, h) => h.streak > max ? h.streak : max, 0) ?? 0
+  const load = useCallback(async () => {
+    const [
+      { data: transactions },
+      { data: habits },
+      { data: habitLogs },
+      { data: tasks },
+      { data: wishes },
+    ] = await Promise.all([
+      supabase.from('transactions').select('type,amount').eq('user_id', userId),
+      supabase.from('habits').select('streak').eq('user_id', userId),
+      supabase.from('habit_logs').select('id').eq('user_id', userId).eq('date', today).eq('completed', true),
+      supabase.from('tasks').select('id').eq('user_id', userId).neq('status', 'done'),
+      supabase.from('wish_items').select('id').eq('user_id', userId).eq('completed', false),
+    ])
+
+    const bal = (transactions ?? []).reduce(
+      (acc: number, t: { type: string; amount: number }) =>
+        t.type === 'income' ? acc + t.amount : acc - t.amount, 0
+    )
+    setBalance(bal)
+    setCompletedToday((habitLogs ?? []).length)
+    setTotalHabits((habits ?? []).length)
+    setPendingTasks((tasks ?? []).length)
+    setPendingWishes((wishes ?? []).length)
+    setTopStreak((habits ?? []).reduce((max: number, h: { streak: number }) => h.streak > max ? h.streak : max, 0))
+  }, [userId, today])
+
+  useEffect(() => { load() }, [load])
+
   const fmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 
   const pillars = [

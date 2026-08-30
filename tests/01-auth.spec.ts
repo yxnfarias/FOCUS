@@ -15,8 +15,8 @@ test.describe('Autenticação', () => {
     await expect(page.getByRole('heading', { name: /bem-vindo de volta/i })).toBeVisible({ timeout: 15000 })
 
     // Switch to register
-    await page.getByRole('button', { name: /criar conta/i }).click()
-    await expect(page.getByRole('heading', { name: /criar conta/i })).toBeVisible()
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
+    await expect(page.getByRole('heading', { name: /criar sua conta/i })).toBeVisible()
     await expect(page.getByLabel('Nome')).toBeVisible()
 
     // Switch back to login
@@ -41,8 +41,8 @@ test.describe('Autenticação', () => {
     await expect(page.getByRole('heading', { name: /bem-vindo de volta/i })).toBeVisible({ timeout: 15000 })
 
     // Try to register first (might fail if user already exists — ignore)
-    await page.getByRole('button', { name: /criar conta/i }).click()
-    await expect(page.getByRole('heading', { name: /criar conta/i })).toBeVisible()
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
+    await expect(page.getByRole('heading', { name: /criar sua conta/i })).toBeVisible()
     await page.getByLabel('Nome').fill(TEST_NAME)
     await page.getByLabel('E-mail').fill(TEST_EMAIL)
     await page.getByLabel('Senha').fill(TEST_PASSWORD)
@@ -76,8 +76,8 @@ test.describe('Autenticação', () => {
   test('valida comprimento mínimo de senha no cadastro', async ({ page }) => {
     await page.goto('/')
     await expect(page.getByRole('heading', { name: /bem-vindo de volta/i })).toBeVisible({ timeout: 15000 })
-    await page.getByRole('button', { name: /criar conta/i }).click()
-    await expect(page.getByRole('heading', { name: /criar conta/i })).toBeVisible()
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
+    await expect(page.getByRole('heading', { name: /criar sua conta/i })).toBeVisible()
 
     // Fill all required fields but with password too short (React check fires after native validation)
     await page.getByLabel('Nome').fill('Usuário Teste')
@@ -92,7 +92,7 @@ test.describe('Autenticação', () => {
     await expect(page.getByLabel('E-mail')).toBeVisible({ timeout: 15000 })
 
     // Register (or get "already exists" error)
-    await page.getByRole('button', { name: /criar conta/i }).click()
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
     await page.getByLabel('Nome').fill(TEST_NAME)
     await page.getByLabel('E-mail').fill(TEST_EMAIL)
     await page.getByLabel('Senha').fill(TEST_PASSWORD)
@@ -123,7 +123,7 @@ test.describe('Autenticação', () => {
     await expect(page.getByLabel('E-mail')).toBeVisible({ timeout: 15000 })
 
     // Register or login
-    await page.getByRole('button', { name: /criar conta/i }).click()
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
     await page.getByLabel('Nome').fill(TEST_NAME)
     await page.getByLabel('E-mail').fill(TEST_EMAIL)
     await page.getByLabel('Senha').fill(TEST_PASSWORD)
