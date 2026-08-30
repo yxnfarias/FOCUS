@@ -20,10 +20,10 @@
 }
 @keyframes cycle {
   0%,  19%  { transform: translateY(0) }
-  25%, 44%  { transform: translateY(-100%) }
-  50%, 69%  { transform: translateY(-200%) }
-  75%, 94%  { transform: translateY(-300%) }
-  100%      { transform: translateY(-400%) }
+  25%, 44%  { transform: translateY(-1.35em) }
+  50%, 69%  { transform: translateY(-2.7em) }
+  75%, 94%  { transform: translateY(-4.05em) }
+  100%      { transform: translateY(-5.4em) }
 }
 
 @media (prefers-reduced-motion: reduce) {

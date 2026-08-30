@@ -62,7 +62,7 @@ export function LoginScreen() {
 
         {/* ── Left panel: dark brand ── */}
         <section
-          className="hidden md:flex flex-col justify-between p-14 relative overflow-hidden"
+          className="hidden md:flex flex-col justify-center p-14 relative overflow-hidden"
           style={{ background: '#0f172a' }}
         >
           {/* Halo A — sky */}
@@ -87,17 +87,6 @@ export function LoginScreen() {
               animation: 'breathe 14s ease-in-out 2s infinite',
             }}
           />
-
-          {/* Wordmark */}
-          <div className="relative z-10 flex items-center gap-3" style={anim('riseIn', '600ms')}>
-            <div
-              className="w-10 h-10 flex items-center justify-center shrink-0"
-              style={{ background: '#3b82f6', borderRadius: '10px' }}
-            >
-              <span className="text-white font-black text-xl">f</span>
-            </div>
-            <span className="text-white font-bold text-xl tracking-wide">focus</span>
-          </div>
 
           {/* Central block */}
           <div className="relative z-10 flex flex-col gap-6">
