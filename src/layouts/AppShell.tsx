@@ -1,4 +1,4 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, Wallet, Target, CheckSquare, Star, BookOpen, Sun, Moon, LogOut,
 } from 'lucide-react'
@@ -21,6 +21,7 @@ function initials(name: string) {
 export function AppShell() {
   const { theme, toggle } = useTheme()
   const { user, logout } = useAuth()
+  const location = useLocation()
 
   return (
     <div className="min-h-screen flex bg-[var(--color-surface)]">
@@ -72,7 +73,7 @@ export function AppShell() {
             </div>
           )}
           <div className="px-4 py-3 flex items-center justify-between border-t border-[var(--color-outline)]">
-            <p className="text-xs text-[var(--color-ink-faint)]">v1.0 · Offline-first</p>
+            <p className="text-xs text-[var(--color-ink-faint)]">v1.5 · Online</p>
             <div className="flex items-center gap-1">
               <button
                 onClick={toggle}
@@ -118,7 +119,7 @@ export function AppShell() {
         </header>
 
         {/* Page */}
-        <main className="flex-1 p-6 md:p-8 w-full">
+        <main key={location.pathname} className="flex-1 p-6 md:p-8 w-full" style={{ animation: 'fadeIn 180ms ease both' }}>
           <div className="max-w-3xl mx-auto">
             <Outlet />
           </div>

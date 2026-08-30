@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { Plus, Trash2, BookOpen, Save } from 'lucide-react'
+import { Plus, Trash2, BookOpen, Save, CheckSquare } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { DiaryEntry } from '../../db'
 import { useAuth } from '../../contexts/AuthContext'
@@ -28,6 +28,7 @@ export function Diary() {
   const [date, setDate] = useState(todayISO())
   const [saved, setSaved] = useState(false)
   const autoSaveRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   const loadEntries = useCallback(async () => {
     const { data } = await supabase
@@ -67,6 +68,19 @@ export function Diary() {
     await loadEntries()
   }
 
+  function insertCheckbox() {
+    const ta = textareaRef.current
+    if (!ta) return
+    const pos = ta.selectionStart ?? content.length
+    const newContent = content.slice(0, pos) + '☐ ' + content.slice(pos)
+    setContent(newContent)
+    requestAnimationFrame(() => {
+      ta.selectionStart = pos + 2
+      ta.selectionEnd = pos + 2
+      ta.focus()
+    })
+  }
+
   async function deleteEntry(id: number) {
     await supabase.from('diary_entries').delete().eq('id', id)
     if (selectedId === id) {
@@ -101,7 +115,7 @@ export function Diary() {
         </div>
         <button
           onClick={newEntry}
-          className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] bg-[var(--color-ink)] text-[var(--color-surface)] text-sm font-semibold hover:opacity-90 transition-opacity"
+          className="flex items-center gap-2 px-3 py-2 rounded-[var(--radius-md)] bg-[var(--color-sky)] text-white text-sm font-semibold hover:bg-[var(--color-sky-deep)] transition-colors"
         >
           <Plus size={15} /> Nova entrada
         </button>
@@ -196,6 +210,7 @@ export function Diary() {
               {/* Content */}
               <div className="relative px-6 pt-1 pb-6">
                 <textarea
+                  ref={textareaRef}
                   placeholder="Como foi o seu dia? O que aconteceu? O que você sentiu?"
                   value={content}
                   onChange={e => setContent(e.target.value)}
@@ -213,13 +228,22 @@ export function Diary() {
                 >
                   <Trash2 size={13} /> Excluir
                 </button>
-                <button
-                  onClick={save}
-                  className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-sky)] hover:opacity-80 transition-opacity"
-                >
-                  <Save size={13} />
-                  {saved ? 'Salvo ✓' : 'Salvar'}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={insertCheckbox}
+                    title="Inserir checkbox"
+                    className="flex items-center gap-1.5 text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors"
+                  >
+                    <CheckSquare size={13} /> Checkbox
+                  </button>
+                  <button
+                    onClick={save}
+                    className="flex items-center gap-1.5 text-xs font-semibold text-[var(--color-sky)] hover:opacity-80 transition-opacity"
+                  >
+                    <Save size={13} />
+                    {saved ? 'Salvo ✓' : 'Salvar'}
+                  </button>
+                </div>
               </div>
             </div>
 
