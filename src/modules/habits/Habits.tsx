@@ -5,7 +5,6 @@ import type { Habit, HabitLog } from '../../db'
 import { Card } from '../../components/ui/Card'
 import { Button } from '../../components/ui/Button'
 import { Input, Select } from '../../components/ui/Input'
-import { ContributionGraph } from './ContributionGraph'
 import { useAuth } from '../../contexts/AuthContext'
 
 const COLORS = ['#3B82F6', '#22C55E', '#FBBF24', '#F87171', '#A855F7', '#F97316']
@@ -79,6 +78,7 @@ export function Habits() {
 
   const [habits, setHabits] = useState<Habit[]>([])
   const [logs, setLogs]     = useState<HabitLog[]>([])
+  const [animatingIds, setAnimatingIds] = useState<Set<number>>(new Set())
 
   const loadHabits = useCallback(async () => {
     const { data } = await supabase
@@ -102,6 +102,10 @@ export function Habits() {
   async function toggleHabit(habit: Habit) {
     if (!habit.id) return
     const isCompleted = completedIds.has(habit.id)
+    if (!isCompleted) {
+      setAnimatingIds(prev => new Set(prev).add(habit.id!))
+      setTimeout(() => setAnimatingIds(prev => { const s = new Set(prev); s.delete(habit.id!); return s }), 400)
+    }
     await supabase.from('habit_logs').upsert(
       { user_id: userId, habit_id: habit.id, date: today, completed: !isCompleted },
       { onConflict: 'habit_id,date' }
@@ -164,13 +168,6 @@ export function Habits() {
         </Card>
       )}
 
-      {/* Contribution Graph */}
-      {total > 0 && (
-        <Card>
-          <ContributionGraph />
-        </Card>
-      )}
-
       {/* Habit cards */}
       {habits.length === 0 ? (
         <Card className="flex flex-col items-center justify-center py-14 gap-3">
@@ -190,6 +187,7 @@ export function Habits() {
                   background: isCompleted ? `${habit.color}12` : 'var(--color-surface-elevated)',
                   borderColor: isCompleted ? habit.color : 'var(--color-outline)',
                   borderWidth: isCompleted ? '1.5px' : '1px',
+                  animation: animatingIds.has(habit.id!) ? 'habitCheck 350ms cubic-bezier(.2,0,.2,1.6)' : undefined,
                 }}
               >
                 {/* Top row: icon + delete */}

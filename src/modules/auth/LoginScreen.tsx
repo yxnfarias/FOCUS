@@ -215,19 +215,9 @@ export function LoginScreen() {
                 className="flex flex-col gap-1.5"
                 style={anim('riseIn', '500ms', isLogin ? '250ms' : '300ms')}
               >
-                <div className="flex items-center justify-between">
-                  <label htmlFor="password" className="text-[13px] font-bold text-[var(--color-ink-muted)]">
-                    Senha
-                  </label>
-                  {isLogin && (
-                    <button
-                      type="button"
-                      className="text-[13px] text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
-                    >
-                      Esqueci minha senha
-                    </button>
-                  )}
-                </div>
+                <label htmlFor="password" className="text-[13px] font-bold text-[var(--color-ink-muted)]">
+                  Senha
+                </label>
                 <div className="relative">
                   <input
                     id="password"
@@ -251,6 +241,14 @@ export function LoginScreen() {
                 </div>
                 {!isLogin && (
                   <p className="text-xs text-[var(--color-ink-subtle)]">Mínimo 6 caracteres</p>
+                )}
+                {isLogin && (
+                  <button
+                    type="button"
+                    className="self-end text-[13px] text-[var(--color-ink-subtle)] hover:text-[var(--color-ink)] transition-colors"
+                  >
+                    Esqueci minha senha
+                  </button>
                 )}
               </div>
 
