@@ -70,7 +70,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       password,
       options: { data: { name } },
     })
-    if (error) throw new Error(error.message)
+    if (error) {
+      const msg = error.message.toLowerCase()
+      if (msg.includes('already registered') || msg.includes('already been registered')) {
+        throw new Error('Este e-mail já está cadastrado.')
+      }
+      throw new Error(error.message)
+    }
   }
 
   function logout() {

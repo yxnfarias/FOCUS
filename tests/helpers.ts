@@ -28,8 +28,8 @@ export async function login(page: Page) {
 
   if (result === 'needsRegister') {
     // User doesn't exist in this fresh context — register them
-    await page.getByRole('button', { name: /criar conta/i }).click()
-    await expect(page.getByRole('heading', { name: /criar conta/i })).toBeVisible({ timeout: 5000 })
+    await page.getByRole('button', { name: /cadastre-se/i }).click()
+    await expect(page.getByRole('heading', { name: /criar sua conta/i })).toBeVisible({ timeout: 5000 })
     await page.getByLabel('Nome').fill(TEST_NAME)
     await page.getByLabel('E-mail').fill(TEST_EMAIL)
     await page.getByLabel('Senha').fill(TEST_PASSWORD)
