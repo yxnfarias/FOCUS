@@ -71,8 +71,9 @@ export function Finances() {
   const [showImport, setShowImport]       = useState(false)
   const [showImportHistory, setShowImportHistory] = useState(false)
 
-  const [transactions, setTransactions] = useState<Transaction[]>([])
-  const [importJobs, setImportJobs]     = useState<ImportJob[]>([])
+  const [transactions, setTransactions]   = useState<Transaction[]>([])
+  const [importJobs, setImportJobs]       = useState<ImportJob[]>([])
+  const [activeFilter, setActiveFilter]   = useState<'all' | 'income' | 'expense'>('all')
 
   const loadTransactions = useCallback(async () => {
     const { data } = await supabase
@@ -178,21 +179,36 @@ export function Finances() {
 
       {/* Summary — 3 colunas */}
       <div className="grid grid-cols-3 gap-3">
-        <Card className="text-center flex flex-col items-center gap-2 py-4">
+        <Card
+          className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
+          onClick={() => setActiveFilter(f => f === 'income' ? 'all' : 'income')}
+          style={{ boxShadow: activeFilter === 'income' ? '0 0 0 2px var(--color-leaf)' : undefined }}
+        >
           <div className="p-2 rounded-full bg-[var(--color-leaf-soft)]">
             <TrendingUp size={18} className="text-[var(--color-leaf-deep)]" />
           </div>
           <p className="text-xs text-[var(--color-ink-muted)] font-semibold">Receitas</p>
           <p className="font-bold text-[var(--color-leaf-deep)] text-base">{fmt(income)}</p>
         </Card>
-        <Card className="text-center flex flex-col items-center gap-2 py-4">
+        <Card
+          className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
+          onClick={() => setActiveFilter(f => f === 'expense' ? 'all' : 'expense')}
+          style={{ boxShadow: activeFilter === 'expense' ? '0 0 0 2px var(--color-coral)' : undefined }}
+        >
           <div className="p-2 rounded-full bg-[var(--color-coral-soft)]">
             <TrendingDown size={18} className="text-[var(--color-coral)]" />
           </div>
           <p className="text-xs text-[var(--color-ink-muted)] font-semibold">Gastos</p>
           <p className="font-bold text-[var(--color-coral)] text-base">{fmt(expense)}</p>
         </Card>
-        <Card className="text-center flex flex-col items-center gap-2 py-4" style={{ borderColor: balance >= 0 ? 'var(--color-outline)' : 'var(--color-coral)' }}>
+        <Card
+          className="text-center flex flex-col items-center gap-2 py-4 cursor-pointer transition-all duration-150"
+          onClick={() => setActiveFilter('all')}
+          style={{
+            borderColor: balance >= 0 ? 'var(--color-outline)' : 'var(--color-coral)',
+            boxShadow: activeFilter === 'all' ? '0 0 0 2px var(--color-sky)' : undefined,
+          }}
+        >
           <div className="p-2 rounded-full" style={{ background: balance >= 0 ? 'var(--color-sky-soft)' : 'var(--color-coral-soft)' }}>
             <DollarSign size={18} style={{ color: balance >= 0 ? 'var(--color-sky)' : 'var(--color-coral)' }} />
           </div>
@@ -202,17 +218,15 @@ export function Finances() {
       </div>
 
       {/* History */}
-      <div className="flex flex-col gap-3">
-        <h2 className="text-base font-bold text-[var(--color-ink)]">Histórico</h2>
-        {!transactions.length && (
-          <Card className="flex flex-col items-center justify-center py-12 gap-2">
-            <DollarSign size={36} className="text-[var(--color-ink-faint)]" />
-            <p className="text-[var(--color-ink-subtle)] font-medium">Nenhuma transação ainda.</p>
-            <p className="text-sm text-[var(--color-ink-faint)]">Adicione receitas e gastos para começar.</p>
-          </Card>
-        )}
-        {transactions.map((t: Transaction) => (
-          <Card key={t.id} className="flex items-center gap-4">
+      {(() => {
+        const filtered = activeFilter === 'all'
+          ? transactions
+          : transactions.filter(t => t.type === activeFilter)
+
+        const filterLabel = activeFilter === 'income' ? 'Receitas' : activeFilter === 'expense' ? 'Gastos' : null
+
+        const TransactionRow = ({ t }: { t: Transaction }) => (
+          <Card className="flex items-center gap-4">
             <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0"
               style={{ background: t.type === 'income' ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)' }}>
               {t.type === 'income'
@@ -234,8 +248,58 @@ export function Finances() {
               <Trash2 size={14} />
             </button>
           </Card>
-        ))}
-      </div>
+        )
+
+        return (
+          <div className="flex flex-col gap-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-bold text-[var(--color-ink)]">
+                {filterLabel ? filterLabel : 'Histórico'}
+              </h2>
+              {filterLabel && (
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className="text-xs text-[var(--color-ink-muted)] hover:text-[var(--color-ink)] transition-colors flex items-center gap-1"
+                >
+                  × Ver tudo
+                </button>
+              )}
+            </div>
+
+            {!transactions.length && (
+              <Card className="flex flex-col items-center justify-center py-12 gap-2">
+                <DollarSign size={36} className="text-[var(--color-ink-faint)]" />
+                <p className="text-[var(--color-ink-subtle)] font-medium">Nenhuma transação ainda.</p>
+                <p className="text-sm text-[var(--color-ink-faint)]">Adicione receitas e gastos para começar.</p>
+              </Card>
+            )}
+
+            {activeFilter === 'all' ? (
+              filtered.map((t: Transaction) => <TransactionRow key={t.id} t={t} />)
+            ) : (() => {
+              const grouped = filtered.reduce((acc, t) => {
+                if (!acc[t.category]) acc[t.category] = []
+                acc[t.category].push(t)
+                return acc
+              }, {} as Record<string, Transaction[]>)
+              const sortedCats = Object.keys(grouped).sort()
+              const accentColor = activeFilter === 'income' ? 'var(--color-leaf-deep)' : 'var(--color-coral)'
+
+              return sortedCats.map(cat => (
+                <div key={cat} className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between px-1 pt-1">
+                    <span className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wide">{cat}</span>
+                    <span className="text-xs font-semibold" style={{ color: accentColor }}>
+                      {activeFilter === 'income' ? '+' : '−'}{fmt(grouped[cat].reduce((a, t) => a + t.amount, 0))}
+                    </span>
+                  </div>
+                  {grouped[cat].map(t => <TransactionRow key={t.id} t={t} />)}
+                </div>
+              ))
+            })()}
+          </div>
+        )
+      })()}
 
       {showModal  && <AddTransactionModal userId={userId} onClose={closeModal} />}
       {showImport && <ImportModal userId={userId} onClose={closeImport} />}

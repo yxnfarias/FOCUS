@@ -68,6 +68,20 @@ export function Diary() {
     await loadEntries()
   }
 
+  function handleTextareaClick(e: React.MouseEvent<HTMLTextAreaElement>) {
+    const ta = e.currentTarget
+    const pos = ta.selectionStart
+    if (pos === null) return
+    const ch = content[pos]
+    if (ch === '☐' || ch === '☑') {
+      setContent(content.slice(0, pos) + (ch === '☐' ? '☑' : '☐') + content.slice(pos + 1))
+      requestAnimationFrame(() => {
+        ta.selectionStart = pos + 1
+        ta.selectionEnd = pos + 1
+      })
+    }
+  }
+
   function insertCheckbox() {
     const ta = textareaRef.current
     if (!ta) return
@@ -214,6 +228,7 @@ export function Diary() {
                   placeholder="Como foi o seu dia? O que aconteceu? O que você sentiu?"
                   value={content}
                   onChange={e => setContent(e.target.value)}
+                  onClick={handleTextareaClick}
                   rows={16}
                   className="w-full bg-transparent outline-none resize-none text-sm text-[var(--color-ink)] placeholder:text-[var(--color-ink-faint)] leading-8"
                   style={{ lineHeight: '32px' }}
