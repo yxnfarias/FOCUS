@@ -238,40 +238,47 @@ export function Finances() {
       {transactions.length > 0 && (() => {
         const typeTxs = activeFilter === 'all' ? transactions : transactions.filter(t => t.type === activeFilter)
         const catMap = typeTxs.reduce((acc, t) => {
-          acc[t.category] = (acc[t.category] ?? 0) + t.amount
+          const signed = activeFilter === 'all'
+            ? (t.type === 'income' ? t.amount : -t.amount)
+            : t.amount
+          acc[t.category] = (acc[t.category] ?? 0) + signed
           return acc
         }, {} as Record<string, number>)
-        const cats = Object.entries(catMap).sort((a, b) => b[1] - a[1])
+        const cats = Object.entries(catMap).sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
         if (!cats.length) return null
-        const maxVal = cats[0][1]
-        const accent = activeFilter === 'income' ? 'var(--color-leaf)' : activeFilter === 'expense' ? 'var(--color-coral)' : 'var(--color-sky)'
-        const accentSoft = activeFilter === 'income' ? 'var(--color-leaf-soft)' : activeFilter === 'expense' ? 'var(--color-coral-soft)' : 'var(--color-sky-soft)'
+        const maxAbs = Math.max(...cats.map(([, v]) => Math.abs(v)))
+        const fixedAccent = activeFilter === 'income' ? 'var(--color-leaf)' : activeFilter === 'expense' ? 'var(--color-coral)' : null
 
         return (
           <div className="flex flex-col gap-1.5">
             <p className="text-xs font-bold text-[var(--color-ink-muted)] uppercase tracking-wide mb-0.5">Por categoria</p>
             {cats.map(([cat, total]) => {
               const isActive = activeCategory === cat
-              const pct = (total / maxVal) * 100
+              const pct = (Math.abs(total) / maxAbs) * 100
+              const barColor = fixedAccent ?? (total >= 0 ? 'var(--color-leaf)' : 'var(--color-coral)')
+              const barSoft  = fixedAccent
+                ? (activeFilter === 'income' ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)')
+                : (total >= 0 ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)')
+              const sign = activeFilter === 'all' ? (total >= 0 ? '+' : '−') : (activeFilter === 'income' ? '+' : '−')
               return (
                 <button
                   key={cat}
                   onClick={() => setActiveCategory(c => c === cat ? null : cat)}
                   className="flex items-center gap-3 px-3 py-2 rounded-[var(--radius-md)] border transition-all duration-150 text-left w-full"
                   style={{
-                    background: isActive ? accentSoft : 'var(--color-surface-elevated)',
-                    borderColor: isActive ? accent : 'var(--color-outline)',
-                    boxShadow: isActive ? `0 0 0 1.5px ${accent}` : undefined,
+                    background: isActive ? barSoft : 'var(--color-surface-elevated)',
+                    borderColor: isActive ? barColor : 'var(--color-outline)',
+                    boxShadow: isActive ? `0 0 0 1.5px ${barColor}` : undefined,
                   }}
                 >
                   <span className="text-base leading-none shrink-0">{CATEGORY_ICONS[cat] ?? '🏷️'}</span>
                   <div className="flex-1 min-w-0 flex flex-col gap-1">
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs font-semibold text-[var(--color-ink-muted)] truncate">{cat}</span>
-                      <span className="text-xs font-bold shrink-0" style={{ color: accent }}>{fmt(total)}</span>
+                      <span className="text-xs font-bold shrink-0" style={{ color: barColor }}>{sign}{fmt(Math.abs(total))}</span>
                     </div>
                     <div className="h-1 rounded-full bg-[var(--color-surface-sunken)] overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: accent }} />
+                      <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: barColor }} />
                     </div>
                   </div>
                 </button>
