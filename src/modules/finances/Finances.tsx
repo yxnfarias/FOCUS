@@ -114,6 +114,11 @@ export function Finances() {
     await loadTransactions()
   }
 
+  async function updateCategory(id: number, category: string) {
+    await supabase.from('transactions').update({ category }).eq('id', id)
+    await loadTransactions()
+  }
+
   async function closeModal() {
     setShowModal(false)
     await loadTransactions()
@@ -309,7 +314,20 @@ export function Finances() {
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-[var(--color-ink)] truncate">{t.description || t.category}</p>
               <div className="flex items-center gap-2 mt-0.5">
-                <Badge color={t.type === 'income' ? 'leaf' : 'coral'}>{t.category}</Badge>
+                <select
+                  value={t.category}
+                  onChange={e => t.id && updateCategory(t.id, e.target.value)}
+                  onClick={e => e.stopPropagation()}
+                  className="text-xs font-semibold rounded-full px-2 py-0.5 border-none outline-none cursor-pointer appearance-none transition-colors"
+                  style={{
+                    background: t.type === 'income' ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)',
+                    color: t.type === 'income' ? 'var(--color-leaf-deep)' : 'var(--color-coral)',
+                  }}
+                >
+                  {(t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(c => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
                 <span className="text-xs text-[var(--color-ink-subtle)]">{new Date(t.date + 'T00:00:00').toLocaleDateString('pt-BR')}</span>
               </div>
             </div>
