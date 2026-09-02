@@ -322,7 +322,8 @@ export function Finances() {
                   style={{
                     background: t.type === 'income' ? 'var(--color-leaf-soft)' : 'var(--color-coral-soft)',
                     color: t.type === 'income' ? 'var(--color-leaf-deep)' : 'var(--color-coral)',
-                  }}
+                    fieldSizing: 'content',
+                  } as React.CSSProperties}
                 >
                   {(t.type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES).map(c => (
                     <option key={c} value={c}>{c}</option>
