@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
-import { Plus, Star, Check, Trash2, ShoppingBag, Compass, Trophy, Flag, ImagePlus, X } from 'lucide-react'
+import { Plus, Star, Check, Trash2, ShoppingBag, Compass, Trophy, Flag, ImagePlus, X, Pencil } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { WishItem } from '../../db'
 import { Card } from '../../components/ui/Card'
@@ -24,14 +24,15 @@ const priorityConfig: Record<Priority, { label: string; color: 'leaf' | 'sun' | 
   high:   { label: 'Alta',  color: 'coral' },
 }
 
-function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void }) {
-  const [title, setTitle] = useState('')
-  const [description, setDescription] = useState('')
-  const [category, setCategory] = useState<Category>('purchase')
-  const [priority, setPriority] = useState<Priority>('medium')
-  const [price, setPrice] = useState('')
-  const [targetDate, setTargetDate] = useState('')
-  const [imageUrl, setImageUrl] = useState<string | undefined>()
+function WishModal({ userId, item, onClose }: { userId: string; item?: WishItem; onClose: () => void }) {
+  const isEdit = !!item
+  const [title, setTitle] = useState(item?.title ?? '')
+  const [description, setDescription] = useState(item?.description ?? '')
+  const [category, setCategory] = useState<Category>((item?.category as Category) ?? 'purchase')
+  const [priority, setPriority] = useState<Priority>((item?.priority as Priority) ?? 'medium')
+  const [price, setPrice] = useState(item?.price != null ? String(item.price) : '')
+  const [targetDate, setTargetDate] = useState(item?.target_date ?? '')
+  const [imageUrl, setImageUrl] = useState<string | undefined>(item?.image_url ?? undefined)
   const fileRef = useRef<HTMLInputElement>(null)
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -45,7 +46,7 @@ function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!title.trim()) return
-    await supabase.from('wish_items').insert({
+    const payload = {
       user_id: userId,
       title: title.trim(),
       description,
@@ -53,9 +54,13 @@ function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void
       priority,
       price: price ? parseFloat(price) : null,
       target_date: targetDate || null,
-      completed: false,
       image_url: imageUrl ?? null,
-    })
+    }
+    if (isEdit && item?.id) {
+      await supabase.from('wish_items').update(payload).eq('id', item.id)
+    } else {
+      await supabase.from('wish_items').insert({ ...payload, completed: false })
+    }
     onClose()
   }
 
@@ -65,7 +70,7 @@ function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void
         className="bg-[var(--color-surface-elevated)] rounded-t-[var(--radius-xl)] sm:rounded-[var(--radius-xl)] w-full max-w-md p-6 flex flex-col gap-4 max-h-[90dvh] overflow-y-auto"
         onClick={e => e.stopPropagation()}
       >
-        <h2 className="text-lg font-bold text-[var(--color-ink)]">Novo desejo</h2>
+        <h2 className="text-lg font-bold text-[var(--color-ink)]">{isEdit ? 'Editar desejo' : 'Novo desejo'}</h2>
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
 
           {/* Image upload */}
@@ -117,7 +122,7 @@ function AddWishModal({ userId, onClose }: { userId: string; onClose: () => void
           <Input label="Data alvo (opcional)" type="date" value={targetDate} onChange={e => setTargetDate(e.target.value)} />
           <div className="flex gap-2 mt-2">
             <Button type="button" variant="ghost" onClick={onClose} fullWidth>Cancelar</Button>
-            <Button type="submit" fullWidth>Salvar</Button>
+            <Button type="submit" fullWidth>{isEdit ? 'Salvar alterações' : 'Salvar'}</Button>
           </div>
         </form>
       </div>
@@ -129,9 +134,10 @@ interface WishCardProps {
   item: WishItem
   onToggle: () => void
   onDelete: () => void
+  onEdit: () => void
 }
 
-function WishCard({ item, onToggle, onDelete }: WishCardProps) {
+function WishCard({ item, onToggle, onDelete, onEdit }: WishCardProps) {
   const cat = categoryConfig[item.category]
   const CatIcon = cat.icon
   const p = priorityConfig[item.priority]
@@ -223,6 +229,13 @@ function WishCard({ item, onToggle, onDelete }: WishCardProps) {
 
         <div className="flex gap-1 shrink-0">
           <button
+            onClick={onEdit}
+            title="Editar"
+            className="p-2 rounded-[var(--radius-md)] hover:bg-[var(--color-sky-soft)] text-[var(--color-ink-faint)] hover:text-[var(--color-sky)] transition-colors"
+          >
+            <Pencil size={15} />
+          </button>
+          <button
             onClick={onToggle}
             title={item.completed ? 'Marcar como pendente' : 'Marcar como realizado'}
             className={`p-2 rounded-[var(--radius-md)] transition-colors ${
@@ -249,6 +262,7 @@ export function Wishlist() {
   const { user } = useAuth()
   const userId = user!.id
   const [showModal, setShowModal] = useState(false)
+  const [editingItem, setEditingItem] = useState<WishItem | undefined>()
   const [filter, setFilter] = useState<Category | 'all'>('all')
   const [items, setItems] = useState<WishItem[]>([])
 
@@ -273,6 +287,7 @@ export function Wishlist() {
 
   async function closeModal() {
     setShowModal(false)
+    setEditingItem(undefined)
     await loadItems()
   }
 
@@ -351,12 +366,15 @@ export function Wishlist() {
               item={item}
               onToggle={() => toggleComplete(item)}
               onDelete={() => item.id && deleteItem(item.id)}
+              onEdit={() => setEditingItem(item)}
             />
           ))}
         </div>
       )}
 
-      {showModal && <AddWishModal userId={userId} onClose={closeModal} />}
+      {(showModal || editingItem) && (
+        <WishModal userId={userId} item={editingItem} onClose={closeModal} />
+      )}
     </div>
   )
 }
