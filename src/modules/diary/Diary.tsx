@@ -178,7 +178,7 @@ export function Diary() {
               className="relative rounded-[var(--radius-lg)] overflow-hidden shadow-md"
               style={{
                 background: 'var(--color-surface-elevated)',
-                borderLeft: '4px solid var(--color-coral)',
+                borderLeft: '4px solid var(--color-sky)',
               }}
             >
               {/* Lined background via repeating-linear-gradient */}
