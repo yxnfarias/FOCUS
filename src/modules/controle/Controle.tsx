@@ -104,11 +104,11 @@ export function Controle() {
   const fmt = (n: number) => `R$ ${n.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
 
   return (
-    <div className="flex flex-col gap-6 pb-20 md:pb-0">
+    <div className="flex flex-col gap-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-[var(--color-ink)]">Controle</h1>
+          <h2 className="text-lg font-bold text-[var(--color-ink)]">Controle de Despesas</h2>
           <p className="text-sm text-[var(--color-ink-muted)] mt-0.5">
             {fixed.length} fixas · {variable.length} variáveis
           </p>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Plus, TrendingUp, TrendingDown, DollarSign, Trash2, Upload, History } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import type { Transaction, ImportJob } from '../../db'
@@ -9,8 +10,13 @@ import { Input, Select } from '../../components/ui/Input'
 import { ImportModal } from './ImportModal'
 import { useAuth } from '../../contexts/AuthContext'
 import { Investments } from './Investments'
+import { Controle } from '../controle/Controle'
 
-type FinanceTab = 'extrato' | 'investimentos'
+type FinanceTab = 'extrato' | 'investimentos' | 'controle'
+
+const TAB_LABELS: Record<FinanceTab, string> = {
+  extrato: 'Extrato', investimentos: 'Investimentos', controle: 'Controle',
+}
 
 const INCOME_CATEGORIES = ['Salário', 'Freelance', 'Investimentos', 'Presente', 'Outro']
 const EXPENSE_CATEGORIES = ['Alimentação', 'Transporte', 'Moradia', 'Saúde', 'Educação', 'Lazer', 'Roupas', 'Assinaturas', 'Outro']
@@ -82,7 +88,10 @@ function AddTransactionModal({ userId, onClose }: { userId: string; onClose: () 
 export function Finances() {
   const { user } = useAuth()
   const userId = user!.id
-  const [tab, setTab]                     = useState<FinanceTab>('extrato')
+  const [searchParams] = useSearchParams()
+  const [tab, setTab] = useState<FinanceTab>(
+    (searchParams.get('tab') as FinanceTab) ?? 'extrato'
+  )
   const [showModal, setShowModal]         = useState(false)
   const [showImport, setShowImport]       = useState(false)
   const [showImportHistory, setShowImportHistory] = useState(false)
@@ -160,7 +169,7 @@ export function Finances() {
 
       {/* Tabs */}
       <div className="flex gap-1 p-1 rounded-[var(--radius-md)] bg-[var(--color-surface-sunken)] self-start">
-        {(['extrato', 'investimentos'] as FinanceTab[]).map(t => (
+        {(Object.keys(TAB_LABELS) as FinanceTab[]).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -170,12 +179,13 @@ export function Finances() {
                 : 'text-[var(--color-ink-muted)] hover:text-[var(--color-ink)]'
             }`}
           >
-            {t === 'extrato' ? 'Extrato' : 'Investimentos'}
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
 
       {tab === 'investimentos' && <Investments userId={userId} />}
+      {tab === 'controle' && <Controle />}
 
       {tab === 'extrato' && <>
       {/* Import history */}

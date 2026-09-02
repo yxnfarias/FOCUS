@@ -7,7 +7,6 @@ import { Habits } from './modules/habits/Habits'
 import { Tasks } from './modules/tasks/Tasks'
 import { Wishlist } from './modules/wishlist/Wishlist'
 import { Diary } from './modules/diary/Diary'
-import { Controle } from './modules/controle/Controle'
 import { LoginScreen } from './modules/auth/LoginScreen'
 
 function AppContent() {
@@ -23,7 +22,6 @@ function AppContent() {
           <Route path="tarefas" element={<Tasks />} />
           <Route path="desejos" element={<Wishlist />} />
           <Route path="diario" element={<Diary />} />
-          <Route path="controle" element={<Controle />} />
         </Route>
       </Routes>
     </BrowserRouter>
