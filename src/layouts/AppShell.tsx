@@ -1,18 +1,23 @@
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
-  LayoutDashboard, Wallet, Target, CheckSquare, Star, BookOpen, Sun, Moon, LogOut, ReceiptText,
+  LayoutDashboard, Wallet, Target, CheckSquare, Star, BookOpen, Sun, Moon, LogOut, ChevronDown,
 } from 'lucide-react'
+import { useState, useEffect } from 'react'
 import { useTheme } from '../hooks/useTheme'
 import { useAuth } from '../contexts/AuthContext'
 
 const navItems = [
   { to: '/', icon: LayoutDashboard, label: 'Início', end: true },
-  { to: '/financas', icon: Wallet, label: 'Finanças' },
   { to: '/habitos', icon: Target, label: 'Hábitos' },
   { to: '/tarefas', icon: CheckSquare, label: 'Tarefas' },
   { to: '/desejos', icon: Star, label: 'Desejos' },
   { to: '/diario', icon: BookOpen, label: 'Diário' },
-  { to: '/controle', icon: ReceiptText, label: 'Controle' },
+]
+
+const finSubItems = [
+  { label: 'Extrato', to: '/financas' },
+  { label: 'Investimentos', to: '/financas?tab=investimentos' },
+  { label: 'Controle', to: '/financas?tab=controle' },
 ]
 
 function initials(name: string) {
@@ -23,6 +28,12 @@ export function AppShell() {
   const { theme, toggle } = useTheme()
   const { user, logout } = useAuth()
   const location = useLocation()
+  const navigate = useNavigate()
+  const [finOpen, setFinOpen] = useState(location.pathname.startsWith('/financas'))
+
+  useEffect(() => {
+    if (location.pathname.startsWith('/financas')) setFinOpen(true)
+  }, [location.pathname])
 
   return (
     <div className="min-h-screen flex bg-[var(--color-surface)]">
@@ -36,6 +47,43 @@ export function AppShell() {
 
         {/* Nav links */}
         <nav className="flex flex-col gap-1 p-3 flex-1">
+          {/* Finanças collapsible group */}
+          <div>
+            <button
+              onClick={() => { setFinOpen(v => !v); navigate('/financas') }}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-[var(--radius-md)] text-sm font-semibold transition-all ${
+                location.pathname.startsWith('/financas')
+                  ? 'bg-[var(--color-sky-soft)] text-[var(--color-sky-deep)]'
+                  : 'text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)]'
+              }`}
+            >
+              <Wallet size={18} strokeWidth={location.pathname.startsWith('/financas') ? 2.5 : 1.8} />
+              <span className="flex-1 text-left">Finanças</span>
+              <ChevronDown size={14} className="transition-transform" style={{ transform: finOpen ? 'rotate(180deg)' : 'rotate(0deg)' }} />
+            </button>
+            {finOpen && (
+              <div className="ml-7 mt-0.5 flex flex-col gap-0.5">
+                {finSubItems.map(({ label, to }) => {
+                  const [path, qs] = to.split('?')
+                  const isActive = location.pathname === path && (qs ? location.search === `?${qs}` : !location.search || location.search === '')
+                  return (
+                    <NavLink
+                      key={to}
+                      to={to}
+                      className={`px-3 py-1.5 rounded-[var(--radius-sm)] text-xs font-semibold transition-all ${
+                        isActive
+                          ? 'bg-[var(--color-sky-soft)] text-[var(--color-sky-deep)]'
+                          : 'text-[var(--color-ink-muted)] hover:bg-[var(--color-surface-sunken)] hover:text-[var(--color-ink)]'
+                      }`}
+                    >
+                      {label}
+                    </NavLink>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+
           {navItems.map(({ to, icon: Icon, label, end }) => (
             <NavLink
               key={to}
@@ -130,6 +178,21 @@ export function AppShell() {
       {/* Bottom nav (mobile only) */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--color-surface-elevated)] border-t border-[var(--color-outline)]">
         <div className="flex justify-around">
+          <NavLink
+            to="/financas"
+            className={({ isActive }) =>
+              `flex flex-col items-center gap-0.5 px-3 py-2 text-xs font-semibold transition-colors ${
+                isActive ? 'text-[var(--color-sky)]' : 'text-[var(--color-ink-subtle)]'
+              }`
+            }
+          >
+            {({ isActive }) => (
+              <>
+                <Wallet size={20} strokeWidth={isActive ? 2.5 : 1.8} />
+                Finanças
+              </>
+            )}
+          </NavLink>
           {navItems.map(({ to, icon: Icon, label, end }) => (
             <NavLink
               key={to}
