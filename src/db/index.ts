@@ -90,6 +90,19 @@ export interface DiaryEntry {
   updated_at?: string
 }
 
+export interface ExpenseControl {
+  id?: number
+  user_id?: string
+  kind: 'fixed' | 'variable'
+  name: string
+  category: string
+  amount: number
+  due_day?: number | null
+  active?: boolean
+  notes?: string
+  created_at?: string
+}
+
 export type InvestmentType = 'stock' | 'fii' | 'etf' | 'bdr' | 'crypto' | 'fixed'
 
 export interface Investment {
